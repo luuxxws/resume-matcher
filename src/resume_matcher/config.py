@@ -19,4 +19,3 @@ OUTPUT_DIR: Path = DATA_DIR / "output"            # results: csv, json, embeddin
 
 for d in [DATA_DIR, RESUMES_DIR, VACANCIES_DIR, OUTPUT_DIR]:
     d.mkdir(parents=True, exist_ok=True)
-

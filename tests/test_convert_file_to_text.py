@@ -7,7 +7,7 @@ def quick_test():
     test_files = [
         Path("data/resumes/_CV_.pdf"),
         Path("data/resumes/Julia_Mikheeva_QA.docx"),
-        # Path("data/resumes/...") # OCR scan 
+        Path("data/resumes/OCRtestImage.png")
     ]
 
     for file_path in test_files:

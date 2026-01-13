@@ -1,37 +1,37 @@
 """
 utils/file_converter.py
 
-Модуль для преобразования резюме различных форматов в текст.
-Основная задача - дать остальной системе единый входной формат (string).
+Module for converting resumes in various formats into text.
+The main task is to provide the rest of the system with a single input format (string).
 """
 
 import mimetypes
 from pathlib import Path
 from typing import Union
 
-# Для .docx
+# For .docx
 try:
     from docx import Document
 except ImportError:
     Document = None
 
-# Для текстовых .pdf
+# For text .pdf
 try:
     import pdfplumber
 except ImportError:
     Document = None
 
-# Для определения, нужен ли OCR
-from ocr_handler import apply_ocr
+# Determine whether OCR is needed
+# from ocr_handler import apply_ocr
 
 
-def convert_to_text(file_path: Union[str, Path]) -> str:
+def convert_file_to_text(file_path: Union[str, Path]) -> str:
     """
-    Принимает путь к файлу и возвращает извлечённый текст.
+    Recieves a path to a file and returns the extracted text.
 
-    Возвращает:
-        - текст документа (str)
-        - или пустую строку + лог при критической ошибке
+    Returns:
+        - document text (str)
+        - or an empty string + log on a critical error
     """
 
     path = Path(file_path)
@@ -53,11 +53,11 @@ def convert_to_text(file_path: Union[str, Path]) -> str:
             print(f".docx reading error {path}: {e}")
             return ""
         
-    # 2. PDF - два основных сценария
+    # 2. PDF - two main scenarios
     if ext == ".pdf":
         if pdfplumber is None:
             print("pdfplumber is not installed -> trying OCR")
-            return apply_ocr(path)
+            # return apply_ocr(path)
         
         try:
             with pdfplumber.open(path) as pdf:
@@ -67,18 +67,18 @@ def convert_to_text(file_path: Union[str, Path]) -> str:
                     if page_text and page_text.strip():
                         text += page_text + "\n"
 
-                # Если почти ничего не извлекли, скорее всего скан
-                if len(text.strip()) < 150: # Подбирается опытным путём
-                    print(f"Not enough text in PDF -> assuming scan: {path}")
-                    return apply_ocr(path)
+                # If extracted almost nothing, most likely a scan.
+                # if len(text.strip()) < 150: # Selected empirically
+                #     print(f"Not enough text in PDF -> assuming scan: {path}")
+                #     return apply_ocr(path)
                 
                 return text.strip()
         
         except Exception as e:
             print(f"pdfplumber error {path}: {e}")
-            return apply_ocr(path)
+            # return apply_ocr(path)
         
-    # 3. Другие форматы
+    # 3. Other formats
     elif ext in [".txt", ".md"]:
         try:
             return path.read_text(encoding="utf-8", errors="replace")
@@ -91,7 +91,7 @@ def convert_to_text(file_path: Union[str, Path]) -> str:
         return ""
     
 def guess_file_type(file_path: Union[str, Path]) -> str:
-    """Пытается определить тип файла по расширению и содержимому"""
+    """Tries to determine file type based on extension and content"""
 
     path = Path(file_path)
     ext = path.suffix.lower()

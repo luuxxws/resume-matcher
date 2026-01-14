@@ -3,6 +3,7 @@ src/resume_matcher/config.py
 """
 
 import os
+import torch
 from pathlib import Path
 from typing import List, Dict, Any
 from dotenv import load_dotenv
@@ -19,3 +20,10 @@ OUTPUT_DIR: Path = DATA_DIR / "output"            # results: csv, json, embeddin
 
 for d in [DATA_DIR, RESUMES_DIR, VACANCIES_DIR, OUTPUT_DIR]:
     d.mkdir(parents=True, exist_ok=True)
+
+
+EMBEDDING_MODEL_NAME = "intfloat/multilingual-e5-large"
+
+EMBEDDING_CACHE_DIR = Path(__file__).parent.parent.parent / "data" / "embedding_cache"
+
+DEVICE = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"

@@ -1,6 +1,7 @@
-# src/resume_matcher/utils/resume_parser.py
+# src/resume_matcher/utils/legacy_parser.py
 """
-Parsing structured data from resume text.
+Obsolete/auxiliary parser.
+The main parsing is now performed by LLM once when importing into the database.
 
 Main fields extracted:
 - name / full name

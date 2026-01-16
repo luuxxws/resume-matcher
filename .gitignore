@@ -17,3 +17,6 @@ __pycache__/
 *.pyo
 *.pyd
 .pytest_cache/
+
+data/taxonomy/*
+!data/taxonomy/.gitkeep

@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: ankane/pgvector:latest
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: resumes_user
+      POSTGRES_PASSWORD: SBKEmGGmdWLaENB8
+      POSTGRES_DB: resumes_db
+    ports:
+      - "5433:5432"                     # 5433 for host, 5432 for container
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U resumes_user -d resumes_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

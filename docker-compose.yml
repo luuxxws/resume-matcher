@@ -1,21 +1,54 @@
 services:
+  # PostgreSQL with pgvector extension
   postgres:
     image: ankane/pgvector:latest
     restart: unless-stopped
     environment:
-      POSTGRES_USER: resumes_user
-      POSTGRES_PASSWORD: JMvuEOfYmCnBWOTE
-      POSTGRES_DB: resumes_db
+      POSTGRES_USER: ${DB_USER:-resumes_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+      POSTGRES_DB: ${DB_NAME:-resumes_db}
     ports:
-      - "5433:5432"                     # 5433 for host, 5432 for container
+      - "${DB_PORT:-5433}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./docker/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U resumes_user -d resumes_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-resumes_user} -d ${DB_NAME:-resumes_db}"]
       interval: 5s
       timeout: 5s
       retries: 5
 
+  # Resume Matcher API
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - DB_NAME=${DB_NAME:-resumes_db}
+      - DB_USER=${DB_USER:-resumes_user}
+      - DB_PASSWORD=${DB_PASSWORD:-changeme}
+      - DB_HOST=postgres
+      - DB_PORT=5432
+    volumes:
+      # Mount data directories for persistence
+      - ./data/resumes:/app/data/resumes:ro
+      - ./data/vacancies:/app/data/vacancies:ro
+      - ./data/output:/app/data/output
+      - embedding_cache:/app/data/embedding_cache
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s  # Model loading takes time
+
 volumes:
   postgres_data:
+  embedding_cache:

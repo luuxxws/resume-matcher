@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/luuxxws/resume-matcher/actions/workflows/ci.yml/badge.svg)](https://github.com/luuxxws/resume-matcher/actions/workflows/ci.yml)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](https://www.docker.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 An AI-powered resume matching system that finds the best candidates for job vacancies using semantic search and LLM-based scoring.
@@ -18,24 +19,51 @@ An AI-powered resume matching system that finds the best candidates for job vaca
 
 ## Quick Start
 
-### Prerequisites
+### Option A: Run with Docker (Recommended)
+
+The easiest way to run the entire stack:
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/luuxxws/resume-matcher.git
+cd resume-matcher
+
+# 2. Configure environment
+cp .env.example .env
+# Edit .env and add your GROQ_API_KEY
+
+# 3. Add your resumes to data/resumes/
+
+# 4. Start everything
+docker compose up -d
+
+# API available at: http://localhost:8000/docs
+```
+
+That's it! The API server and database will start automatically.
+
+### Option B: Local Development Setup
+
+For local development with more control:
+
+#### Prerequisites
 
 - Python 3.11+
-- Docker & Docker Compose
+- Docker & Docker Compose (for PostgreSQL)
 - [uv](https://docs.astral.sh/uv/) (recommended) or pip
 - Groq API key (for LLM features)
 
-### 1. Clone and Setup
+#### 1. Clone and Setup
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/luuxxws/resume-matcher.git
 cd resume-matcher
 
 # Install dependencies with uv
 uv sync
 ```
 
-### 2. Configure Environment
+#### 2. Configure Environment
 
 ```bash
 # Copy the example environment file
@@ -46,16 +74,16 @@ cp .env.example .env
 # Database settings have defaults that work with docker-compose
 ```
 
-### 3. Start Database
+#### 3. Start Database
 
 ```bash
-# Start PostgreSQL with pgvector
-docker compose up -d
+# Start PostgreSQL with pgvector (database only)
+docker compose up -d postgres
 
 # The database will be automatically initialized with the required schema
 ```
 
-### 4. Import Resumes
+#### 4. Import Resumes
 
 ```bash
 # Import all resumes from a directory
@@ -65,7 +93,7 @@ uv run resume-matcher import ./data/resumes/
 uv run resume-matcher import ./path/to/resume.pdf
 ```
 
-### 5. Match Vacancies
+#### 5. Match Vacancies
 
 ```bash
 # Using CLI
@@ -78,7 +106,7 @@ uv run resume-matcher match ./data/vacancies/Vacancy1.docx --llm
 uv run resume-matcher match ./data/vacancies/Vacancy1.docx --llm --score-range 80-100
 ```
 
-### 6. Start API Server
+#### 6. Start API Server
 
 ```bash
 uv run resume-matcher serve
@@ -163,7 +191,8 @@ resume-matcher/
 │   └── taxonomy/            # ESCO taxonomy files
 ├── docker/
 │   └── init-db.sql          # Database initialization
-├── docker-compose.yml
+├── Dockerfile               # Application container
+├── docker-compose.yml       # Full stack orchestration
 ├── pyproject.toml
 └── .env.example
 ```

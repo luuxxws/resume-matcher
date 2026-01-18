@@ -1,0 +1,60 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv
+venv
+ENV
+
+# Build
+build/
+dist/
+*.egg-info/
+
+# IDE
+.idea/
+.vscode/
+.cursor/
+*.swp
+*.swo
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+
+# Data files (mount these as volumes instead)
+data/resumes/*
+data/vacancies/*
+data/output/*
+data/embedding_cache/*
+*.pdf
+*.docx
+*.doc
+
+# Environment
+.env
+.env.local
+.env*.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation (not needed in image)
+*.md
+!README.md
+LICENSE
+
+# Tests (not needed in production image)
+tests/
+
+# GitHub
+.github/

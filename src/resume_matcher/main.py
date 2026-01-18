@@ -3,10 +3,14 @@
 Resume Matcher - AI-powered resume matching and ranking system.
 
 This is the main entry point that provides:
-1. Unified CLI with subcommands (import, match)
-2. Programmatic API for integration
+1. Unified CLI with subcommands (import, match, serve)
+2. REST API for integration
+3. Programmatic API for Python integration
 
 Usage:
+    # Start the API server
+    uv run resume-matcher serve --port 8000
+
     # Import resumes into database
     uv run resume-matcher import --dir data/resumes --workers 8
 
@@ -16,10 +20,11 @@ Usage:
     # Match with LLM re-ranking (more accurate)
     uv run resume-matcher match --vacancy data/vacancies/Vacancy1.docx --llm --top 10
 
+    # Show database info
+    uv run resume-matcher info
+
     # Show help
     uv run resume-matcher --help
-    uv run resume-matcher import --help
-    uv run resume-matcher match --help
 """
 
 import argparse
@@ -144,6 +149,23 @@ def cmd_match(args: argparse.Namespace) -> int:
         return 0 if result.matches else 1
 
 
+def cmd_serve(args: argparse.Namespace) -> int:
+    """Handle the 'serve' subcommand - start the API server."""
+    import uvicorn
+
+    logger.info(f"Starting Resume Matcher API server on {args.host}:{args.port}")
+    logger.info(f"API docs available at: http://{args.host}:{args.port}/docs")
+
+    uvicorn.run(
+        "resume_matcher.api:app",
+        host=args.host,
+        port=args.port,
+        reload=args.reload,
+        log_level="info" if not args.quiet else "warning",
+    )
+    return 0
+
+
 def cmd_info(args: argparse.Namespace) -> int:
     """Handle the 'info' subcommand - show database statistics."""
     from resume_matcher.db import get_connection
@@ -180,10 +202,11 @@ def create_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  %(prog)s import --dir data/resumes --workers 8
-  %(prog)s match --vacancy data/vacancies/Vacancy1.docx --top 10
-  %(prog)s match --vacancy data/vacancies/Vacancy1.docx --llm --top 10
-  %(prog)s info
+  %(prog)s serve --port 8000              # Start API server
+  %(prog)s import --dir data/resumes      # Import resumes
+  %(prog)s match -v vacancy.docx --top 10 # Match resumes
+  %(prog)s match -v vacancy.docx --llm    # Match with LLM
+  %(prog)s info                           # Show DB stats
         """,
     )
     parser.add_argument(
@@ -296,6 +319,31 @@ Examples:
         description="Display information about the resume database",
     )
 
+    # =========================================================================
+    # SERVE subcommand
+    # =========================================================================
+    serve_parser = subparsers.add_parser(
+        "serve",
+        help="Start the REST API server",
+        description="Start the FastAPI server for REST API access",
+    )
+    serve_parser.add_argument(
+        "--host", "-H",
+        default="0.0.0.0",
+        help="Host to bind to (default: 0.0.0.0)",
+    )
+    serve_parser.add_argument(
+        "--port", "-p",
+        type=int,
+        default=8000,
+        help="Port to bind to (default: 8000)",
+    )
+    serve_parser.add_argument(
+        "--reload", "-r",
+        action="store_true",
+        help="Enable auto-reload for development",
+    )
+
     return parser
 
 
@@ -316,6 +364,7 @@ def main() -> int:
         "import": cmd_import,
         "match": cmd_match,
         "info": cmd_info,
+        "serve": cmd_serve,
     }
 
     handler = commands.get(args.command)

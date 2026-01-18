@@ -11,6 +11,7 @@ requires-python = ">=3.11"
 
 dependencies = [
     "dotenv>=0.9.9",
+    "fastapi>=0.115.0",
     "groq>=1.0.0",
     "numpy<2",
     "opencv-python<4.12",
@@ -19,11 +20,13 @@ dependencies = [
     "pgvector>=0.4.2",
     "pillow>=12.1.0",
     "psycopg[binary,pool]>=3.3.2",
+    "python-multipart>=0.0.9",
     "pytesseract>=0.3.13",
     "python-docx>=1.2.0",
     "python-dotenv>=1.2.1",
     "sentence-transformers>=5.2.0",
     "torch==2.2.2",
+    "uvicorn>=0.32.0",
 ]
 
 [project.scripts]

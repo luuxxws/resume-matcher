@@ -1,22 +1,78 @@
-# Data
-data/
+# =============================================================================
+# Environment & Secrets (CRITICAL - never commit!)
+# =============================================================================
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# =============================================================================
+# Data files (resumes, vacancies, cache)
+# =============================================================================
+data/resumes/
+data/vacancies/
+data/output/
+data/embedding_cache/
 *.pdf
 *.docx
 *.doc
 
-# virtual envs
-.venv/
-uv.lock
-
-# macOS
-.DS_Store
-
-# Python cache
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.pytest_cache/
-
+# Keep taxonomy data structure
 data/taxonomy/*
 !data/taxonomy/.gitkeep
+
+# =============================================================================
+# Python
+# =============================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
+
+# Type checking
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Testing
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+
+# =============================================================================
+# IDE & Editors
+# =============================================================================
+.idea/
+.vscode/
+.cursor/
+*.swp
+*.swo
+*~
+
+# =============================================================================
+# OS
+# =============================================================================
+.DS_Store
+Thumbs.db
+
+# =============================================================================
+# Project specific
+# =============================================================================
+# Uncomment if you want to commit uv.lock for reproducible builds:
+# uv.lock

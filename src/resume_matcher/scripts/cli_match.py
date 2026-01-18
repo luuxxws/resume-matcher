@@ -10,13 +10,14 @@ Usage:
     uv run match-vacancy --vacancy data/vacancies/Vacancy1.docx --top 10 --llm
 
 Flags:
-    --vacancy     Path to vacancy file (PDF, DOCX, TXT)
-    --text        Vacancy text directly (alternative to --vacancy)
-    --top         Number of top matches to return (default: 10)
-    --min-score   Minimum similarity score 0-100 (default: 0)
-    --llm         Use LLM for intelligent re-ranking (slower but more accurate)
-    --candidates  Number of embedding candidates for LLM to re-rank (default: 30)
-    --json        Output results as JSON instead of pretty print
+    --vacancy      Path to vacancy file (PDF, DOCX, TXT)
+    --text         Vacancy text directly (alternative to --vacancy)
+    --top          Number of top matches to return (default: 10)
+    --min-score    Minimum similarity score 0-100 (default: 0)
+    --score-range  Score range filter, e.g. "80-100" (default: show all)
+    --llm          Use LLM for intelligent re-ranking (slower but more accurate)
+    --candidates   Number of embedding candidates for LLM to re-rank (default: 30)
+    --json         Output results as JSON instead of pretty print
 """
 
 import argparse
@@ -40,6 +41,33 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 logger = logging.getLogger(__name__)
+
+
+def parse_score_range(range_str: str | None) -> tuple[float, float] | None:
+    """
+    Parse score range string like '80-100' into (min, max) tuple.
+    Returns None if no range specified.
+    """
+    if not range_str:
+        return None
+    
+    try:
+        parts = range_str.split("-")
+        if len(parts) != 2:
+            raise ValueError(f"Invalid range format: {range_str}. Use 'MIN-MAX' format, e.g. '80-100'")
+        
+        min_score = float(parts[0].strip())
+        max_score = float(parts[1].strip())
+        
+        if min_score < 0 or max_score > 100:
+            raise ValueError(f"Score range must be between 0 and 100")
+        if min_score > max_score:
+            raise ValueError(f"Min score ({min_score}) cannot be greater than max score ({max_score})")
+        
+        return (min_score, max_score)
+    except ValueError as e:
+        logger.error(f"Invalid score range: {e}")
+        raise
 
 
 def result_to_dict(result: MatchResult) -> dict:
@@ -128,6 +156,12 @@ def main() -> None:
         default=0,
         help="Minimum similarity score 0-100 (default: 0)",
     )
+    parser.add_argument(
+        "--score-range",
+        type=str,
+        default=None,
+        help="Score range filter, e.g. '80-100' to show only scores in that range",
+    )
 
     # LLM options
     parser.add_argument(
@@ -156,6 +190,11 @@ def main() -> None:
     # Convert min-score from percentage to 0-1 range
     min_similarity = args.min_score / 100.0
 
+    # Parse score range filter
+    score_range = parse_score_range(args.score_range)
+    if score_range:
+        logger.info(f"Filtering results to score range: {score_range[0]}-{score_range[1]}")
+
     # Determine vacancy text
     vacancy_input = args.vacancy or args.text
     is_file = args.vacancy is not None
@@ -178,6 +217,12 @@ def main() -> None:
                 embedding_candidates=args.candidates,
                 min_similarity=min_similarity,
             )
+
+        # Apply score range filter (LLM uses combined_score)
+        if score_range:
+            min_s, max_s = score_range
+            scores = [s for s in scores if min_s <= s.combined_score <= max_s]
+            logger.info(f"After range filter: {len(scores)} candidates")
 
         # Output
         if args.json:
@@ -205,6 +250,12 @@ def main() -> None:
                 top_n=args.top,
                 min_similarity=min_similarity,
             )
+
+        # Apply score range filter (embedding uses score_percent)
+        if score_range:
+            min_s, max_s = score_range
+            result.matches = [m for m in result.matches if min_s <= m.score_percent <= max_s]
+            logger.info(f"After range filter: {len(result.matches)} candidates")
 
         # Output
         if args.json:

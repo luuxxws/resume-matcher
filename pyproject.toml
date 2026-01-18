@@ -27,6 +27,7 @@ dependencies = [
 ]
 
 [project.scripts]
+resume-matcher = "resume_matcher.main:main"
 import-resumes = "resume_matcher.scripts.cli_import:main"
 match-vacancy = "resume_matcher.scripts.cli_match:main"
 

@@ -37,6 +37,7 @@ match-vacancy = "resume_matcher.scripts.cli_match:main"
 [dependency-groups]
 dev = [
     "mypy>=1.19.1",
+    "pytest>=8.0.0",
     "ruff>=0.14.13",
     "types-psycopg2>=2.9.21.20251012",
     "types-tqdm>=4.67.0.20250809",

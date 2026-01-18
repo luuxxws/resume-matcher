@@ -18,7 +18,7 @@ import logging
 import sys
 from pathlib import Path
 
-from src.resume_matcher.services.resume_importer import import_resume
+from src.resume_matcher.services.importer import import_resume
 
 # Add project root to sys.path
 project_root = Path(__file__).resolve().parents[3]
@@ -34,7 +34,7 @@ logging.basicConfig(
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Test processing of one resume via resume_importer.py")
+    parser = argparse.ArgumentParser(description="Test processing of one resume via importer.py")
     parser.add_argument("--file", required=True, help="Path to resumes file")
     parser.add_argument("--force", action="store_true", help="Force overwrite (force_update)")
     parser.add_argument("--dry-run", action="store_true", help="Simulation only, without saving to the database")
@@ -45,7 +45,7 @@ def main():
         print(f"Файл не найден или не является файлом: {file_path}")
         sys.exit(1)
 
-    print("=== Тест resume_importer.py ===")
+    print("=== Тест importer.py ===")
     print(f"Файл: {file_path.name}")
     print(f"Полный путь: {file_path.absolute()}")
     print(f"Force update: {args.force}")

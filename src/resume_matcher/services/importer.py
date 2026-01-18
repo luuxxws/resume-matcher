@@ -1,6 +1,6 @@
-# src/resume_matcher/services/resume_importer.py
+# src/resume_matcher/services/importer.py
 """
-Processing of one resume file:
+Resume importer service - processing of one resume file:
 - conversion to text (PDF, DOCX, image, OCR if necessary)
 - minimal text cleaning
 - embedding generation

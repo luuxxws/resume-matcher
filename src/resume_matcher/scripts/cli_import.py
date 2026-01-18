@@ -1,11 +1,11 @@
-# src/resume_matcher/scripts/import_resumes.py
+# src/resume_matcher/scripts/cli_import.py
 """
-Mass import of resumes from a folder into PostgreSQL with deletion synchronization.
+CLI for mass import of resumes from a folder into PostgreSQL.
 
 Launch:
     uv run import-resumes --dir data/resumes --workers 8 --force
     # or
-    uv run python -m resume_matcher.scripts.import_resumes --dir data/resumes --workers 8 --force
+    uv run python -m resume_matcher.scripts.cli_import --dir data/resumes --workers 8 --force
 
 Flags:
     --dir         Folder with resumes (default data/resumes)
@@ -23,7 +23,7 @@ from pathlib import Path
 
 from tqdm import tqdm
 
-from resume_matcher.services.resume_importer import import_resume, sync_deleted_resumes
+from resume_matcher.services.importer import import_resume, sync_deleted_resumes
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -98,14 +98,62 @@ def import_folder(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Mass import of resumes into PostgreSQL")
-    parser.add_argument("--dir", default="data/resumes", help="Resume folder")
-    parser.add_argument("--workers", type=int, default=mp.cpu_count(), help="Number of processes")
-    parser.add_argument("--force", action="store_true", help="Overwrite all files")
-    parser.add_argument("--dry-run", action="store_true", help="Only simulation")
-    parser.add_argument("--limit", type=int, help="Limit the number of files")
-    parser.add_argument("--only-sync", action="store_true", help="Only sync deleted files (no imports whatsoever)")
+    parser = argparse.ArgumentParser(
+        description="Mass import of resumes into PostgreSQL"
+    )
+
+    # Directory option
+    parser.add_argument(
+        "--dir",
+        default="data/resumes",
+        help="Resume folder"
+    )
+
+    # Workers option
+    parser.add_argument(
+        "--workers",
+        type=int,
+        default=mp.cpu_count(),
+        help="Number of processes"
+    )
+
+    # Force update option
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Overwrite all files",
+    )
+
+    # Dry run option
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Only simulation",
+    )
+
+    # Limiting options
+    parser.add_argument(
+        "--limit",
+        type=int,
+        help="Limit the number of files",
+    )
+    parser.add_argument(
+        "--only-sync",
+        action="store_true",
+        help="Only sync deleted files (no imports whatsoever)",
+    )
+    
+    # Quiet option
+    parser.add_argument(
+        "--quiet",
+        action="store_true",
+        help="Suppress logging output",
+    )
+
     args = parser.parse_args()
+
+    if args.quiet:
+        logging.getLogger().setLevel(logging.WARNING)
 
     import_folder(
         Path(args.dir),

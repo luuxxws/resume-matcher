@@ -1,17 +1,17 @@
 # src/resume_matcher/db.py
 
-import os
 import hashlib
 import json
 import logging
+import os
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Any
 
-import psycopg
-from psycopg.rows import dict_row
-from pgvector.psycopg import register_vector
-from dotenv import load_dotenv
 import numpy as np
+import psycopg
+from dotenv import load_dotenv
+from pgvector.psycopg import register_vector
+from psycopg.rows import dict_row
 
 load_dotenv()
 
@@ -49,17 +49,16 @@ def get_file_hash(path: Path) -> str:
 
 def resume_exists(file_path: Path) -> bool:
     """Checks whether there is a resume in the database at file_path"""
-    with get_connection() as conn:
-        with conn.cursor() as cur:
-            cur.execute("SELECT 1 FROM resumes WHERE file_path = %s", (str(file_path.absolute()),))
-            return bool(cur.fetchone())
+    with get_connection() as conn, conn.cursor() as cur:
+        cur.execute("SELECT 1 FROM resumes WHERE file_path = %s", (str(file_path.absolute()),))
+        return bool(cur.fetchone())
 
 
 def store_resume(
     file_path: Path,
     raw_text: str,
     cleaned_text: str,
-    json_data: Dict[str, Any],
+    json_data: dict[str, Any],
     embedding: np.ndarray,
     force_update: bool = False,
 ) -> int:
@@ -70,9 +69,8 @@ def store_resume(
     file_hash = get_file_hash(file_path)
     abs_path = str(file_path.absolute())
 
-    with get_connection() as conn:
-        with conn.cursor() as cur:
-            cur.execute("""
+    with get_connection() as conn, conn.cursor() as cur:
+        cur.execute("""
                 INSERT INTO resumes (
                     file_name, file_path, file_hash, raw_text, cleaned_text, json_data, embedding
                 )
@@ -86,33 +84,32 @@ def store_resume(
                     updated_at = NOW()
                 RETURNING id
             """, (
-                file_path.name,
-                abs_path,
-                file_hash,
-                raw_text,
-                cleaned_text,
-                json.dumps(json_data),
-                embedding.tolist()
-            ))
+            file_path.name,
+            abs_path,
+            file_hash,
+            raw_text,
+            cleaned_text,
+            json.dumps(json_data),
+            embedding.tolist()
+        ))
 
-            inserted_id = cur.fetchone()["id"]
-            logger.info(f"Saved/Updated resume: {file_path.name} (id={inserted_id})")
-            return inserted_id
+        inserted_id = cur.fetchone()["id"]
+        logger.info(f"Saved/Updated resume: {file_path.name} (id={inserted_id})")
+        return inserted_id
         
 
-def get_resume_by_path(file_path: Path) -> Optional[Dict[str, Any]]:
+def get_resume_by_path(file_path: Path) -> dict[str, Any] | None:
     """Gets a resume record by file_path"""
-    with get_connection() as conn:
-        with conn.cursor() as cur:
-            cur.execute("""
+    with get_connection() as conn, conn.cursor() as cur:
+        cur.execute("""
                 SELECT id, file_name, file_hash, json_data, embedding
                 FROM resumes
                 WHERE file_path = %s
             """, (str(file_path.absolute()),))
-            row = cur.fetchone()
-            if row:
-                if row["embedding"] is not None:
-                    row["embedding"] = np.array(row["embedding"])
-                return row
-            return None
+        row = cur.fetchone()
+        if row:
+            if row["embedding"] is not None:
+                row["embedding"] = np.array(row["embedding"])
+            return row
+        return None
         

@@ -1,11 +1,10 @@
 # src/resume_matcher/config.py
 
-import os
 import csv
-import torch
 import logging
 from pathlib import Path
-from typing import Set, List, Dict, Tuple, Any
+
+import torch
 from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
@@ -35,10 +34,10 @@ DEVICE = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is
 
 # ─── Taxonomy variables ────────────────────────────────────────––––––––––––––––––
 
-KNOWN_OCCUPATIONS: Set[str] = set()
-OCCUPATION_NORMALIZED: Dict[str, str] = {}
-KNOWN_SKILLS: Set[str] = set()
-OCCUPATION_TO_SKILLS: Dict[str, List[str]] = {}
+KNOWN_OCCUPATIONS: set[str] = set()
+OCCUPATION_NORMALIZED: dict[str, str] = {}
+KNOWN_SKILLS: set[str] = set()
+OCCUPATION_TO_SKILLS: dict[str, list[str]] = {}
 ESCO_TAXONOMY_DIR = Path(__file__).parent.parent.parent / "data" / "taxonomy"
 
 
@@ -118,7 +117,7 @@ def load_esco_relations():
 
     file_path = ESCO_TAXONOMY_DIR / "occupationSkillRelations_en.csv"
     if not file_path.exists():
-        logger.warning(f"File occupationSkillRelations_en.csv was not found")
+        logger.warning("File occupationSkillRelations_en.csv was not found")
         return
 
     count = 0

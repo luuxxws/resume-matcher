@@ -16,15 +16,15 @@ Methods:
 - regex + section rules (SUMMARY, EXPERIENCE, SKILLS, etc.)
 - normalization and cleaning of extracted values
 """
-import re
-from typing import Dict, List, Optional, Any
 import logging
+import re
+from typing import Any
 
 from ..config import KNOWN_OCCUPATIONS, KNOWN_SKILLS, OCCUPATION_NORMALIZED
 
 logger = logging.getLogger(__name__)
 
-def parse_resume(text: str) -> Dict[str, Any]:
+def parse_resume(text: str) -> dict[str, Any]:
     """
     The main function of resume parsing.
 
@@ -37,7 +37,7 @@ def parse_resume(text: str) -> Dict[str, Any]:
     if not text or not text.strip():
         return {"error": "Text is empty"}
 
-    result: Dict[str, Any] = {
+    result: dict[str, Any] = {
         "raw_text_length": len(text),
         "extracted_fields": {},
         "confidence": {},  # confidence level in each field (0–1)
@@ -91,33 +91,33 @@ def parse_resume(text: str) -> Dict[str, Any]:
 
 # ─── Auxiliary extraction functions ─────────────────────────────────────────
 
-def extract_email(text: str) -> Optional[str]:
+def extract_email(text: str) -> str | None:
     """Finds the first valid email in the text"""
-    pattern = r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+'
+    pattern = r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+"
     match = re.search(pattern, text)
     return match.group(0) if match else None
 
 
-def extract_phone(text: str) -> Optional[str]:
+def extract_phone(text: str) -> str | None:
     """Finds phone number"""
     # Removing unnecessary characters from the search
-    cleaned = re.sub(r'[\s\-\(\)\+]', '', text)
+    cleaned = re.sub(r"[\s\-\(\)\+]", "", text)
 
     patterns = [
-        r'(\+?\d{1,3})?\s*(\d{3})\s*(\d{3})\s*(\d{2})\s*(\d{2})',  # +7 917 753 54 98
-        r'(\+?\d{1,3})?[\s.-]*(\d{3})[\s.-]*(\d{3})[\s.-]*(\d{4})',  # +1 555-123-4567
-        r'(\+?\d{1,3})?[\s(]*(\d{3})[\s)]*(\d{3})[\s-]*(\d{2})[\s-]*(\d{2})',
+        r"(\+?\d{1,3})?\s*(\d{3})\s*(\d{3})\s*(\d{2})\s*(\d{2})",  # +7 917 753 54 98
+        r"(\+?\d{1,3})?[\s.-]*(\d{3})[\s.-]*(\d{3})[\s.-]*(\d{4})",  # +1 555-123-4567
+        r"(\+?\d{1,3})?[\s(]*(\d{3})[\s)]*(\d{3})[\s-]*(\d{2})[\s-]*(\d{2})",
     ]
 
     for pattern in patterns:
         match = re.search(pattern, cleaned)
         if match:
             parts = [g for g in match.groups() if g]
-            return ''.join(parts)
+            return "".join(parts)
     return None
 
 
-def extract_name(text: str) -> Optional[str]:
+def extract_name(text: str) -> str | None:
     """Attempts to find the full name at the beginning of the text"""
     lines = text.splitlines()
     for i, line in enumerate(lines[:10]):  # searching in first 10 lines
@@ -127,7 +127,7 @@ def extract_name(text: str) -> Optional[str]:
 
         # Simple heuristics: 2–4 words, capital letters, no @ / http
         words = line.split()
-        if 1 < len(words) <= 4 and not any(s in line.lower() for s in ['@', 'http', 'www', 'github', 'linkedin']):
+        if 1 < len(words) <= 4 and not any(s in line.lower() for s in ["@", "http", "www", "github", "linkedin"]):
             capitals = sum(w[0].isupper() for w in words if w)
             if capitals >= len(words) - 1:
                 return line.strip()
@@ -135,7 +135,7 @@ def extract_name(text: str) -> Optional[str]:
     return None
 
 
-def extract_links(text: str) -> Dict[str, str]:
+def extract_links(text: str) -> dict[str, str]:
     """Finds links to LinkedIn, GitHub, Telegram, a website"""
     links = {}
     patterns = {
@@ -150,18 +150,18 @@ def extract_links(text: str) -> Dict[str, str]:
         if matches:
             # Taking first normalized link
             link = matches[0]
-            if not link.startswith('http'):
-                link = 'https://' + link
+            if not link.startswith("http"):
+                link = "https://" + link
             links[name] = link
 
     return links
 
 
-def extract_location(text: str) -> Optional[str]:
+def extract_location(text: str) -> str | None:
     """Searches for location (often in the title or SUMMARY)"""
     patterns = [
-        r'(?:Madrid|Moscow|Saint Petersburg|Россия|Spain|Russian Federation)[,\s]*(?:[A-Z][a-z]+)?',
-        r'(?:Москва|Санкт-Петербург|Мадрид|Россия|Испания)[,\s]*\w*',
+        r"(?:Madrid|Moscow|Saint Petersburg|Россия|Spain|Russian Federation)[,\s]*(?:[A-Z][a-z]+)?",
+        r"(?:Москва|Санкт-Петербург|Мадрид|Россия|Испания)[,\s]*\w*",
     ]
 
     for pattern in patterns:
@@ -171,7 +171,7 @@ def extract_location(text: str) -> Optional[str]:
     return None
 
 
-def extract_position(text: str) -> Optional[str]:
+def extract_position(text: str) -> str | None:
     """Searches for position, using ESCO taxonomy"""
     lines = [line.strip() for line in text.splitlines()[:20] if line.strip()]
 
@@ -189,14 +189,14 @@ def extract_position(text: str) -> Optional[str]:
             return line.strip()
 
         # Option 3: one word + level (Senior, Lead, Junior, etc.)
-        level_words = {'senior', 'lead', 'junior', 'chief', 'head', 'principal'}
+        level_words = {"senior", "lead", "junior", "chief", "head", "principal"}
         if len(matches) >= 1 and any(lw in words for lw in level_words):
             return line.strip()
 
     return None
 
 
-def extract_skills(text: str) -> List[str]:
+def extract_skills(text: str) -> list[str]:
     """Searches for skills, using ESCO skills"""
     skills_found = set()
 
@@ -218,7 +218,7 @@ def extract_skills(text: str) -> List[str]:
 
         if in_skills_section or len(line.strip()) < 100:  # Short lines after Skills
             # Breaking down into commas, semicolons, and hyphens
-            candidates = re.split(r'[,;•|]\s*|\n+', line.strip())
+            candidates = re.split(r"[,;•|]\s*|\n+", line.strip())
             for cand in candidates:
                 cand = cand.strip()
                 if 3 <= len(cand) <= 40:

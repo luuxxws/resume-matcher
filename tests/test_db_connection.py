@@ -1,9 +1,10 @@
 # src/resume_matcher/tests/test_db_connection.py
 
+import json
+import logging
 import sys
 from pathlib import Path
-import logging
-import json
+
 import numpy as np
 
 # Adding project root to sys.path
@@ -14,9 +15,9 @@ if str(project_root) not in sys.path:
 from src.resume_matcher.db import (
     get_connection,
     get_file_hash,
+    get_resume_by_path,
     resume_exists,
     store_resume,
-    get_resume_by_path,
 )
 
 logger = logging.getLogger(__name__)
@@ -27,14 +28,13 @@ def test_connection():
     """Test 1: Simple connection and basic checks"""
     print("\n=== Test 1: Connecting to PostgreSQL ===")
     try:
-        with get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute("SELECT version();")
-                print("PostgreSQL version:", cur.fetchone()["version"])
-                cur.execute("SELECT * FROM pg_extension WHERE extname = 'vector';")
-                print("pgvector installed:", bool(cur.fetchone()))
-                cur.execute("SELECT COUNT(*) FROM resumes;")
-                print("Records in the resumes table:", cur.fetchone()["count"])
+        with get_connection() as conn, conn.cursor() as cur:
+            cur.execute("SELECT version();")
+            print("PostgreSQL version:", cur.fetchone()["version"])
+            cur.execute("SELECT * FROM pg_extension WHERE extname = 'vector';")
+            print("pgvector installed:", bool(cur.fetchone()))
+            cur.execute("SELECT COUNT(*) FROM resumes;")
+            print("Records in the resumes table:", cur.fetchone()["count"])
         print("Test 1 completed ✓")
     except Exception as e:
         print(f"Error in test 1: {e}")
@@ -94,7 +94,7 @@ def test_store_and_read():
         print(f"  ID: {loaded['id']}")
         print(f"  file_name: {loaded['file_name']}")
         print(f"  json_data: {json.dumps(loaded['json_data'], ensure_ascii=False, indent=2)}")
-        emb_shape = loaded['embedding'].shape if loaded['embedding'] is not None else 'None'
+        emb_shape = loaded["embedding"].shape if loaded["embedding"] is not None else "None"
         print(f"  embedding shape: {emb_shape}")
     else:
         print("Resume not found after saving")

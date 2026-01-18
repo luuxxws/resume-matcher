@@ -2,21 +2,20 @@
 src/resume_matcher/utils/ocr_handler.py
 """
 
+import logging
+from pathlib import Path
+
 import cv2
 import numpy as np
-from pathlib import Path
-from PIL import Image
-
 import pytesseract
 from pdf2image import convert_from_path
 from pdf2image.exceptions import (
     PDFInfoNotInstalledError,
     PDFPageCountError,
-    PDFSyntaxError,
     PDFPopplerTimeoutError,
+    PDFSyntaxError,
 )
-
-import logging
+from PIL import Image
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +23,7 @@ logger = logging.getLogger(__name__)
 def preprocess_image(image: Image.Image) -> Image.Image:
     """Preprocessing for better OCR"""
     # PIL -> OpenCV (BGR)
-    img_cv = np.array(image.convert('RGB'))  # на всякий случай
+    img_cv = np.array(image.convert("RGB"))  # на всякий случай
     img_cv = cv2.cvtColor(img_cv, cv2.COLOR_RGB2BGR)
 
     # Grayscale + CLAHE (contrast limited adaptive histogram equalization)
@@ -50,20 +49,20 @@ def preprocess_image(image: Image.Image) -> Image.Image:
     # Back to PIL
     return Image.fromarray(dilated)
 
-def ocr_from_image(image: Image.Image | str | Path, lang: str = 'eng+rus') -> str:
+def ocr_from_image(image: Image.Image | str | Path, lang: str = "eng+rus") -> str:
     """OCR of a single image"""
     try:
         image = image.resize((int(image.width * 2), int(image.height * 2)), Image.LANCZOS)
         processed = preprocess_image(image)
         
-        custom_config = r'--oem 3 --psm 11 -c preserve_interword_spaces=1'
+        custom_config = r"--oem 3 --psm 11 -c preserve_interword_spaces=1"
         text = pytesseract.image_to_string(image, lang=lang, config=custom_config)
         return text.strip()
     except Exception as e:
         logger.error(f"OCR error on image: {e}")
         return ""
     
-def ocr_from_pdf(pdf_path: Path | str, lang: str = 'eng+rus') -> str:
+def ocr_from_pdf(pdf_path: Path | str, lang: str = "eng+rus") -> str:
     """OCR of a multilateral PDF"""
     pdf_path = Path(pdf_path)
     if not pdf_path.exists():

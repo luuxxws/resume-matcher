@@ -1,17 +1,16 @@
 # src/resume_matcher/models/embedding.py
 
 import logging
+import pickle
 from pathlib import Path
-from typing import List, Optional, Union
 
 import numpy as np
-import pickle
 from sentence_transformers import SentenceTransformer
 
 from ..config import (
-    EMBEDDING_MODEL_NAME,
-    EMBEDDING_CACHE_DIR,
     DEVICE,
+    EMBEDDING_CACHE_DIR,
+    EMBEDDING_MODEL_NAME,
 )
 
 logger = logging.getLogger(__name__)
@@ -54,7 +53,7 @@ def get_embedding(
 
 
 def batch_get_embeddings(
-        texts: List[str],
+        texts: list[str],
     normalize: bool = True,
     batch_size: int = 32,
 ) -> np.ndarray:
@@ -83,7 +82,7 @@ def batch_get_embeddings(
 
 # –– Caching based on file –––––––––––––––––––––––––––––––––––––––––––––––––––––
 
-def get_cached_embedding(file_path: Union[str, Path]) -> Optional[np.ndarray]:
+def get_cached_embedding(file_path: str | Path) -> np.ndarray | None:
     """Attempts to load embedding from cache"""
     cache_path = EMBEDDING_CACHE_DIR / f"{Path(file_path).stem}.pkl"
     if cache_path.exists():
@@ -98,7 +97,7 @@ def get_cached_embedding(file_path: Union[str, Path]) -> Optional[np.ndarray]:
     return None
 
 
-def save_embedding_to_cache(file_path: Union[str, Path], embedding: np.ndarray):
+def save_embedding_to_cache(file_path: str | Path, embedding: np.ndarray):
     """Saves embedding in cache"""
     EMBEDDING_CACHE_DIR.mkdir(parents=True, exist_ok=True)
     cache_path = EMBEDDING_CACHE_DIR / f"{Path(file_path).stem}.pkl"
@@ -112,7 +111,7 @@ def save_embedding_to_cache(file_path: Union[str, Path], embedding: np.ndarray):
 
 def get_or_compute_embedding(
     text: str,
-    file_path: Optional[Union[str, Path]] = None,
+    file_path: str | Path | None = None,
     force_recompute: bool = False,
 ) -> np.ndarray:
     """

@@ -8,26 +8,86 @@ Processing of one resume file:
 - future plans: parsing structured fields (name, email, skills, etc.)
 """
 
+import json
 import logging
+import os
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any
 
+from dotenv import load_dotenv
+from groq import Groq
+
+from ..db import get_connection, store_resume
+from ..models.embedding import get_or_compute_embedding
 from ..utils.convert_file_to_text import convert_file_to_text
 from ..utils.text_cleaner import clean_ocr_text
-from ..models.embedding import get_or_compute_embedding
-from ..db import store_resume, get_connection
+
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 
+GROQ_CLIENT = Groq(api_key=os.getenv("GROQ_API_KEY"))
+GROQ_MODEL = "llama-3.3-70b-versatile"
 
-def import_resume(file_path: Path | str, force_update: bool = False) -> Dict[str, Any]:
+
+def extract_structured_json_via_llm(text: str) -> dict[str, Any]:
     """
-    Imports a single resume into the database:
-    - extracts text
-    - cleans it up
-    - generates embedding
-    - parses it through LLM into JSON
-    - saves everything in PostgreSQL
+    Extracts structured data from resume text via Groq (Llama 3.1).
+    Returns a dict with fields.
+    """
+    prompt = f"""You are an expert in parsing resumes.
+Extract structured data in JSON format from the resume text.
+Return ONLY a valid JSON object, without extra text, without markdown, without ```json.
+
+Required fields (if no information is available, return null or an empty list):
+{{
+  “full_name”: str or null,
+  “email”: str or null,
+  “phone”: str or null,
+  “location”: str or null,
+  “current_position”: str or null,
+  “years_experience”: int or null,
+  “skills”: list[str],
+  “languages”: list[str],
+  “linkedin”: str or null,
+  “github”: str or null,
+  “summary”: brief profile description (2–3 sentences) or null
+}}
+
+Resume text (can be in Russian and English):
+{text[:15000]}
+"""
+
+    try:
+        response = GROQ_CLIENT.chat.completions.create(
+            model=GROQ_MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.0,          # maximum determinism
+            max_tokens=1000,
+            top_p=1.0
+        )
+
+        content = response.choices[0].message.content.strip()
+
+        # Remove possible markdown
+        if content.startswith("```json"):
+            content = content.split("```json")[1].split("```")[0].strip()
+
+        parsed = json.loads(content)
+        logger.info("LLM-parsing successful")
+        return parsed
+
+    except json.JSONDecodeError as e:
+        logger.error(f"LLM returned invalid JSON: {e}")
+        return {}
+    except Exception as e:
+        logger.error(f"Error with Groq API: {e}")
+        return {}
+
+
+def import_resume(file_path: Path | str, force_update: bool = False) -> dict[str, Any]:
+    """
+    Imports a single resume into the database.
     """
     path = Path(file_path)
     if not path.is_file():
@@ -76,48 +136,29 @@ def import_resume(file_path: Path | str, force_update: bool = False) -> Dict[str
     return result
 
 
-def extract_structured_json_via_llm(text: str) -> Dict[str, Any]:
+def sync_deleted_resumes(resumes_dir: Path):
     """
-    Extracts structured data once via LLM.
-    This is where your call to LLM (OpenAI, Grok, Ollama, etc.) should be.
+    Removes resume records from the database that are no longer in the folder.
     """
-    # Prompt example
-    prompt = f"""
-    Extract structured data from the resume text in JSON format.
-Return ONLY a valid JSON object with the following fields:
-    {{
-      "full_name": str or null,
-      "email": str or null,
-      "phone": str or null,
-      "location": str or null,
-      "current_position": str or null,
-      "years_experience": int or null,
-      "skills": list[str],
-      "languages": list[str],
-      "linkedin": str or null,
-      "github": str or null,
-      "summary": brief profile description (2–3 sentences)
-    }}
+    current_files: set[str] = {str(f.absolute()) for f in resumes_dir.rglob("*.*") if f.is_file()}
 
-    Resume text:
-    {text[:12000]}
-    """
+    with get_connection() as conn, conn.cursor() as cur:
+        cur.execute("SELECT file_path FROM resumes")
+        db_paths: set[str] = {row["file_path"] for row in cur.fetchall()}
 
-    # Здесь вызов твоей LLM-функции
-    # Пример для OpenAI:
-    # response = openai.ChatCompletion.create(...)
-    # json_str = response.choices[0].message.content
+        deleted_paths = db_paths - current_files
 
-    # Пока заглушка
-    return {
-        "full_name": "Evgeny Taychinov",
-        "email": "helloevgenyy@gmail.com",
-        "phone": "79177535498",
-        "location": "Moscow, Russia",
-        "current_position": "Senior Machine Learning Engineer",
-        "years_experience": 4,
-        "skills": ["Python", "PyTorch", "NLP", "Computer Vision"],
-        "languages": ["Russian", "English"],
-        "linkedin": "https://linkedin.com/in/evgeny-taychinov",
-        "summary": "Senior ML Engineer with 4 years in RecSys, NLP and CV."
-    }
+        if not deleted_paths:
+            logger.info("No deleted rusumes found")
+            return
+
+        logger.info(f"Found deleted files in folder: {len(deleted_paths)}")
+
+        deleted_count = 0
+        for path in deleted_paths:
+            cur.execute("DELETE FROM resumes WHERE file_path = %s", (path,))
+            deleted_count += 1
+            logger.info(f"Record deleted from BD: {Path(path).name}")
+
+        conn.commit()
+        logger.info(f"Records deleted from BD: {deleted_count}")

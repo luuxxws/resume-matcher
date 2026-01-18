@@ -8,10 +8,11 @@ Requirements:
 - config.py and embedding.py are configured correctly
 """
 
-import sys
-from pathlib import Path
 import argparse
 import logging
+import sys
+from pathlib import Path
+
 import numpy as np
 
 # Setting up logging
@@ -29,15 +30,15 @@ if str(project_root) not in sys.path:
 
 # Importing the required modules
 try:
+    from src.resume_matcher.config import EMBEDDING_MODEL_NAME
     from src.resume_matcher.models.embedding import (
-        get_embedding,
-        batch_get_embeddings,
-        get_or_compute_embedding,
         DIMENSION,
+        batch_get_embeddings,
+        get_embedding,
+        get_or_compute_embedding,
     )
     from src.resume_matcher.utils.convert_file_to_text import convert_file_to_text
     from src.resume_matcher.utils.text_cleaner import clean_ocr_text
-    from src.resume_matcher.config import EMBEDDING_MODEL_NAME
 except ImportError as e:
     logger.error(f"Failed to import modules: {e}")
     logger.error("Ensure that you are running the script from the project root or using uv run.")
@@ -87,7 +88,7 @@ def test_batch_embedding():
 def test_file_embedding(file_path: Path):
     """Test on a real file from data/resumes"""
     print("\n" + "="*70)
-    print(f"Test 3: Embedding a real file")
+    print("Test 3: Embedding a real file")
     print(f"File: {file_path}")
     print("-"*70)
 
@@ -112,7 +113,7 @@ def test_file_embedding(file_path: Path):
         print("text_cleaner not found -> using raw text")
 
     emb = get_or_compute_embedding(cleaned, file_path=file_path)
-    print(f"Embedding recieved")
+    print("Embedding recieved")
     print(f"  Shape: {emb.shape}")
     print(f"  Norm: {np.linalg.norm(emb):.4f}")
     print(f"  First 5 values: {emb[:5]}")

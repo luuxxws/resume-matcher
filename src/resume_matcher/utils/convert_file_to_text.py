@@ -5,11 +5,11 @@ Module for converting resumes in various formats into text.
 The main task is to provide the rest of the system with a single input format (string).
 """
 
+import logging
 import mimetypes
 from pathlib import Path
-from typing import Union
+
 from PIL import Image
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -26,10 +26,10 @@ except ImportError:
     Document = None
 
 # Determine whether OCR is needed
-from src.resume_matcher.utils.ocr_handler import ocr_from_pdf, ocr_from_image
+from resume_matcher.utils.ocr_handler import ocr_from_image, ocr_from_pdf
 
 
-def convert_file_to_text(file_path: Union[str, Path]) -> str:
+def convert_file_to_text(file_path: str | Path) -> str:
     """
     Recieves a path to a file and returns the extracted text.
 
@@ -104,7 +104,7 @@ def convert_file_to_text(file_path: Union[str, Path]) -> str:
         logger.error(f"Unknown file format: {ext} -> {path}")
         return ""
     
-def guess_file_type(file_path: Union[str, Path]) -> str:
+def guess_file_type(file_path: str | Path) -> str:
     """Tries to determine file type based on extension and content"""
 
     path = Path(file_path)

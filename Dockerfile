@@ -10,22 +10,20 @@ WORKDIR /app
 # Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
-# Copy dependency files
+# Copy ALL project files needed for installation
 COPY pyproject.toml README.md ./
+COPY src/ src/
 
-# Install CPU-only PyTorch first, then the rest
+# Create venv and install with CPU-only PyTorch
 RUN uv venv && \
-    # Install CPU-only torch explicitly
+    # Install CPU-only torch first
     uv pip install --no-cache \
         torch==2.2.2+cpu \
         --index-url https://download.pytorch.org/whl/cpu && \
-    # Install everything else from PyPI (torch already satisfied)
-    uv pip install --no-cache -e . && \
+    # Install the project (not editable, proper install)
+    uv pip install --no-cache . && \
     # Clean caches
     rm -rf /root/.cache
-
-# Copy source
-COPY src/ src/
 
 # =============================================================================
 # Stage 2: Runtime - minimal production image  
@@ -37,7 +35,7 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-# Install runtime system dependencies (minimal set)
+# Install runtime system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     tesseract-ocr \
     tesseract-ocr-eng \
@@ -48,9 +46,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
-# Copy from builder
+# Copy the virtual environment from builder
 COPY --from=builder /app/.venv /app/.venv
-COPY --from=builder /app/src /app/src
+
+# Copy docker init scripts
 COPY docker/ docker/
 
 ENV PATH="/app/.venv/bin:$PATH"

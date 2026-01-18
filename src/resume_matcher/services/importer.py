@@ -26,8 +26,19 @@ load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-GROQ_CLIENT = Groq(api_key=os.getenv("GROQ_API_KEY"))
 GROQ_MODEL = "llama-3.3-70b-versatile"
+_groq_client: Groq | None = None
+
+
+def get_groq_client() -> Groq:
+    """Lazily initialize the Groq client."""
+    global _groq_client
+    if _groq_client is None:
+        api_key = os.getenv("GROQ_API_KEY")
+        if not api_key:
+            raise RuntimeError("GROQ_API_KEY environment variable is not set")
+        _groq_client = Groq(api_key=api_key)
+    return _groq_client
 
 
 def extract_structured_json_via_llm(text: str) -> dict[str, Any]:
@@ -59,7 +70,7 @@ Resume text (can be in Russian and English):
 """
 
     try:
-        response = GROQ_CLIENT.chat.completions.create(
+        response = get_groq_client().chat.completions.create(
             model=GROQ_MODEL,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.0,  # maximum determinism

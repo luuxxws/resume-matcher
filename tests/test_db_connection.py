@@ -12,7 +12,7 @@ project_root = Path(__file__).resolve().parents[3]
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-from src.resume_matcher.db import (
+from resume_matcher.db import (
     get_connection,
     get_file_hash,
     get_resume_by_path,

@@ -30,15 +30,15 @@ if str(project_root) not in sys.path:
 
 # Importing the required modules
 try:
-    from src.resume_matcher.config import EMBEDDING_MODEL_NAME
-    from src.resume_matcher.models.embedding import (
+    from resume_matcher.config import EMBEDDING_MODEL_NAME
+    from resume_matcher.models.embedding import (
         DIMENSION,
         batch_get_embeddings,
         get_embedding,
         get_or_compute_embedding,
     )
-    from src.resume_matcher.utils.convert_file_to_text import convert_file_to_text
-    from src.resume_matcher.utils.text_cleaner import clean_ocr_text
+    from resume_matcher.utils.convert_file_to_text import convert_file_to_text
+    from resume_matcher.utils.text_cleaner import clean_ocr_text
 except ImportError as e:
     logger.error(f"Failed to import modules: {e}")
     logger.error("Ensure that you are running the script from the project root or using uv run.")

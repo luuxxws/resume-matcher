@@ -18,7 +18,7 @@ import logging
 import sys
 from pathlib import Path
 
-from src.resume_matcher.services.importer import import_resume
+from resume_matcher.services.importer import import_resume
 
 # Add project root to sys.path
 project_root = Path(__file__).resolve().parents[3]

@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from src.resume_matcher.utils.convert_file_to_text import convert_file_to_text
+from resume_matcher.utils.convert_file_to_text import convert_file_to_text
 
 
 def quick_test():

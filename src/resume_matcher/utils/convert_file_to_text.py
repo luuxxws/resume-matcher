@@ -11,6 +11,8 @@ from pathlib import Path
 
 from PIL import Image
 
+from resume_matcher.utils.ocr_handler import ocr_from_image, ocr_from_pdf
+
 logger = logging.getLogger(__name__)
 
 # For .docx
@@ -23,10 +25,7 @@ except ImportError:
 try:
     import pdfplumber
 except ImportError:
-    Document = None
-
-# Determine whether OCR is needed
-from resume_matcher.utils.ocr_handler import ocr_from_image, ocr_from_pdf
+    pdfplumber = None
 
 
 def convert_file_to_text(file_path: str | Path) -> str:
@@ -42,7 +41,7 @@ def convert_file_to_text(file_path: str | Path) -> str:
     if not path.is_file():
         logger.error(f"File is not found: {path}")
         return ""
-    
+
     ext = path.suffix.lower()
 
     # 1. Microsoft Word (.docx)
@@ -56,13 +55,13 @@ def convert_file_to_text(file_path: str | Path) -> str:
         except Exception as e:
             logger.error(f".docx reading error {path}: {e}")
             return ""
-        
+
     # 2. PDF - two main scenarios
     elif ext == ".pdf":
         if pdfplumber is None:
             logger.info("pdfplumber is not installed -> trying OCR")
             return ocr_from_pdf(path)
-        
+
         try:
             with pdfplumber.open(path) as pdf:
                 text = ""
@@ -72,16 +71,16 @@ def convert_file_to_text(file_path: str | Path) -> str:
                         text += page_text + "\n"
 
                 # If extracted almost nothing, most likely a scan.
-                if len(text.strip()) < 100: # Selected empirically
+                if len(text.strip()) < 100:  # Selected empirically
                     logger.info(f"Low text length -> trying OCR: {path.name}")
                     text = ocr_from_pdf(path, lang="eng+rus")
-                
+
                 return text.strip()
-        
+
         except Exception as e:
             logger.error(f"pdfplumber error {path}: {e}")
             return ocr_from_pdf(path)
-        
+
     # 3. Single image (.jpg, .jpeg, .png, .webp)
     elif ext in [".jpg", ".jpeg", ".png", ".webp"]:
         try:
@@ -91,7 +90,7 @@ def convert_file_to_text(file_path: str | Path) -> str:
         except Exception as e:
             logger.error(f"Reading text file error {path}: {e}")
             return ""
-        
+
     # 4. Other formats
     elif ext in [".txt", ".md"]:
         try:
@@ -99,19 +98,20 @@ def convert_file_to_text(file_path: str | Path) -> str:
         except Exception as e:
             logger.error(f"Reading text file error {path}: {e}")
             return ""
-        
+
     else:
         logger.error(f"Unknown file format: {ext} -> {path}")
         return ""
-    
+
+
 def guess_file_type(file_path: str | Path) -> str:
     """Tries to determine file type based on extension and content"""
 
     path = Path(file_path)
     ext = path.suffix.lower()
-    
+
     mime, _ = mimetypes.guess_type(path)
-    
+
     if ext == ".pdf":
         return "pdf"
     if ext == ".docx":

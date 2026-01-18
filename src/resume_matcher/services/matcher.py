@@ -184,6 +184,7 @@ def _find_similar_resumes(
         json_data = row["json_data"]
         if isinstance(json_data, str):
             import json
+
             try:
                 json_data = json.loads(json_data)
             except json.JSONDecodeError:
@@ -212,12 +213,12 @@ def _get_total_resume_count() -> int:
 
 def print_match_results(result: MatchResult) -> None:
     """Pretty-prints match results to console."""
-    print(f"\n{'='*60}")
-    print(f"VACANCY MATCHING RESULTS")
-    print(f"{'='*60}")
+    print(f"\n{'=' * 60}")
+    print("VACANCY MATCHING RESULTS")
+    print(f"{'=' * 60}")
     print(f"Total resumes in database: {result.total_resumes_in_db}")
     print(f"Matches found: {len(result.matches)}")
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
     if not result.matches:
         print("No matching resumes found.")
@@ -237,16 +238,18 @@ def print_match_results(result: MatchResult) -> None:
         print(f"    File: {match.file_name}")
         print()
 
+
 # ============================================================================
 # LLM-POWERED MATCHING (Re-ranking with intelligent scoring)
 # ============================================================================
+
 
 def match_vacancy_with_llm(
     vacancy_text: str,
     top_n: int = 10,
     embedding_candidates: int = 30,
     min_similarity: float = 0.0,
-) -> tuple["VacancyRequirements", list["CandidateScore"]]:
+) -> tuple[VacancyRequirements, list[CandidateScore]]:
     """
     Two-stage matching: embedding search + LLM re-ranking.
 
@@ -262,7 +265,10 @@ def match_vacancy_with_llm(
     Returns:
         Tuple of (VacancyRequirements, list of CandidateScore)
     """
-    from resume_matcher.models.llm_scorer import rerank_with_llm, VacancyRequirements, CandidateScore
+    from resume_matcher.models.llm_scorer import (
+        VacancyRequirements,
+        rerank_with_llm,
+    )
 
     if not vacancy_text or not vacancy_text.strip():
         logger.warning("Empty vacancy text provided")
@@ -333,7 +339,7 @@ def match_vacancy_file_with_llm(
     top_n: int = 10,
     embedding_candidates: int = 30,
     min_similarity: float = 0.0,
-) -> tuple["VacancyRequirements", list["CandidateScore"]]:
+) -> tuple[VacancyRequirements, list[CandidateScore]]:
     """
     Two-stage matching from a vacancy file.
 

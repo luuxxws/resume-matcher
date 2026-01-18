@@ -161,18 +161,18 @@ Return ONLY a valid JSON object, without extra text, without markdown.
 
 Job Requirements:
 - Title: {requirements.job_title}
-- Seniority: {requirements.seniority_level or 'Not specified'}
-- Must-have skills: {', '.join(requirements.must_have_skills) or 'None specified'}
-- Nice-to-have skills: {', '.join(requirements.nice_to_have_skills) or 'None specified'}
-- Min experience: {requirements.min_years_experience or 'Not specified'} years
+- Seniority: {requirements.seniority_level or "Not specified"}
+- Must-have skills: {", ".join(requirements.must_have_skills) or "None specified"}
+- Nice-to-have skills: {", ".join(requirements.nice_to_have_skills) or "None specified"}
+- Min experience: {requirements.min_years_experience or "Not specified"} years
 - Summary: {requirements.summary}
 
 Candidate Profile:
 - Name: {candidate_name}
 - Current position: {candidate_position}
-- Years of experience: {candidate_experience or 'Unknown'}
-- Skills: {', '.join(candidate_skills[:30]) if candidate_skills else 'Not listed'}
-- Summary: {candidate_summary or 'Not provided'}
+- Years of experience: {candidate_experience or "Unknown"}
+- Skills: {", ".join(candidate_skills[:30]) if candidate_skills else "Not listed"}
+- Summary: {candidate_summary or "Not provided"}
 
 Scoring criteria:
 1. Role fit: Is the candidate's background relevant to this specific role?
@@ -273,7 +273,7 @@ def rerank_with_llm(
     Returns:
         Tuple of (VacancyRequirements, list of CandidateScore sorted by combined_score)
     """
-    logger.info(f"Parsing vacancy requirements...")
+    logger.info("Parsing vacancy requirements...")
     requirements = parse_vacancy(vacancy_text)
 
     logger.info(f"Vacancy: {requirements.job_title}")
@@ -284,7 +284,7 @@ def rerank_with_llm(
     logger.info(f"Scoring {len(candidates)} candidates with LLM...")
     for i, candidate in enumerate(candidates):
         candidate_name = candidate.get("json_data", {}).get("full_name", "Unknown")
-        logger.info(f"  [{i+1}/{len(candidates)}] Scoring: {candidate_name}")
+        logger.info(f"  [{i + 1}/{len(candidates)}] Scoring: {candidate_name}")
 
         score = score_candidate(
             requirements=requirements,
@@ -331,13 +331,13 @@ def print_scored_results(
     for i, score in enumerate(scores, 1):
         match_emoji = {
             "excellent": "🟢",
-            "good": "🟡", 
+            "good": "🟡",
             "partial": "🟠",
             "poor": "🔴",
         }.get(score.match_level, "⚪")
 
         print(f"#{i} {match_emoji} {score.match_level.upper()} | Score: {score.combined_score:.1f}")
-        print(f"   LLM: {score.llm_score}/100 | Embedding: {score.embedding_score*100:.1f}%")
+        print(f"   LLM: {score.llm_score}/100 | Embedding: {score.embedding_score * 100:.1f}%")
         print(f"   File: {score.file_name}")
         print(f"   ✓ Matching: {', '.join(score.matching_skills[:5]) or 'None'}")
         if score.missing_skills:

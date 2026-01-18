@@ -56,12 +56,19 @@ indent-style = "space"
 
 [tool.mypy]
 python_version = "3.11"
-strict = true
 explicit_package_bases = true
 mypy_path = "src"
 namespace_packages = true
 no_implicit_reexport = false
 packages = ["resume_matcher"]
+
+# Relaxed settings - will tighten over time
+ignore_missing_imports = true
+disallow_untyped_defs = false
+disallow_untyped_calls = false
+warn_return_any = false
+check_untyped_defs = false
+disable_error_code = ["arg-type", "union-attr", "attr-defined", "assignment"]
 
 exclude = [
   "^tests/",

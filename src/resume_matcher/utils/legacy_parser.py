@@ -16,6 +16,7 @@ Methods:
 - regex + section rules (SUMMARY, EXPERIENCE, SKILLS, etc.)
 - normalization and cleaning of extracted values
 """
+
 import logging
 import re
 from typing import Any
@@ -23,6 +24,7 @@ from typing import Any
 from ..config import KNOWN_OCCUPATIONS, KNOWN_SKILLS, OCCUPATION_NORMALIZED
 
 logger = logging.getLogger(__name__)
+
 
 def parse_resume(text: str) -> dict[str, Any]:
     """
@@ -44,7 +46,7 @@ def parse_resume(text: str) -> dict[str, Any]:
     }
 
     # Normalizing text for easy searching
-    normalized = text.lower()
+    text.lower()
 
     # 1. Email
     email = extract_email(text)
@@ -91,6 +93,7 @@ def parse_resume(text: str) -> dict[str, Any]:
 
 # ─── Auxiliary extraction functions ─────────────────────────────────────────
 
+
 def extract_email(text: str) -> str | None:
     """Finds the first valid email in the text"""
     pattern = r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+"
@@ -120,14 +123,16 @@ def extract_phone(text: str) -> str | None:
 def extract_name(text: str) -> str | None:
     """Attempts to find the full name at the beginning of the text"""
     lines = text.splitlines()
-    for i, line in enumerate(lines[:10]):  # searching in first 10 lines
+    for _i, line in enumerate(lines[:10]):  # searching in first 10 lines
         line = line.strip()
         if not line:
             continue
 
         # Simple heuristics: 2–4 words, capital letters, no @ / http
         words = line.split()
-        if 1 < len(words) <= 4 and not any(s in line.lower() for s in ["@", "http", "www", "github", "linkedin"]):
+        if 1 < len(words) <= 4 and not any(
+            s in line.lower() for s in ["@", "http", "www", "github", "linkedin"]
+        ):
             capitals = sum(w[0].isupper() for w in words if w)
             if capitals >= len(words) - 1:
                 return line.strip()
@@ -201,7 +206,14 @@ def extract_skills(text: str) -> list[str]:
     skills_found = set()
 
     # Looking for the Skills / Technical Skills section, etc.
-    start_markers = ["skills", "technical skills", "навыки", "технические навыки", "technologies", "stack"]
+    start_markers = [
+        "skills",
+        "technical skills",
+        "навыки",
+        "технические навыки",
+        "technologies",
+        "stack",
+    ]
     end_markers = ["experience", "опыт", "education", "образование", "languages"]
 
     lines = text.splitlines()
@@ -226,4 +238,4 @@ def extract_skills(text: str) -> list[str]:
                     if lower_cand in KNOWN_SKILLS:
                         skills_found.add(cand.strip())
 
-    return sorted(list(skills_found))
+    return sorted(skills_found)

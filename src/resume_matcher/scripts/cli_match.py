@@ -5,7 +5,7 @@ CLI for matching resumes against a vacancy.
 Usage:
     # Fast embedding-only matching
     uv run match-vacancy --vacancy data/vacancies/Vacancy1.docx --top 10
-    
+
     # Intelligent LLM-powered matching (recommended)
     uv run match-vacancy --vacancy data/vacancies/Vacancy1.docx --top 10 --llm
 
@@ -24,13 +24,12 @@ import argparse
 import json
 import logging
 import sys
-from dataclasses import asdict
 
 from resume_matcher.services.matcher import (
     MatchResult,
     match_vacancy_file,
-    match_vacancy_text,
     match_vacancy_file_with_llm,
+    match_vacancy_text,
     match_vacancy_with_llm,
     print_match_results,
 )
@@ -50,20 +49,24 @@ def parse_score_range(range_str: str | None) -> tuple[float, float] | None:
     """
     if not range_str:
         return None
-    
+
     try:
         parts = range_str.split("-")
         if len(parts) != 2:
-            raise ValueError(f"Invalid range format: {range_str}. Use 'MIN-MAX' format, e.g. '80-100'")
-        
+            raise ValueError(
+                f"Invalid range format: {range_str}. Use 'MIN-MAX' format, e.g. '80-100'"
+            )
+
         min_score = float(parts[0].strip())
         max_score = float(parts[1].strip())
-        
+
         if min_score < 0 or max_score > 100:
-            raise ValueError(f"Score range must be between 0 and 100")
+            raise ValueError("Score range must be between 0 and 100")
         if min_score > max_score:
-            raise ValueError(f"Min score ({min_score}) cannot be greater than max score ({max_score})")
-        
+            raise ValueError(
+                f"Min score ({min_score}) cannot be greater than max score ({max_score})"
+            )
+
         return (min_score, max_score)
     except ValueError as e:
         logger.error(f"Invalid score range: {e}")
@@ -132,15 +135,11 @@ def llm_result_to_dict(requirements, scores) -> dict:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Match resumes against a vacancy description"
-    )
+    parser = argparse.ArgumentParser(description="Match resumes against a vacancy description")
 
     # Input options (mutually exclusive)
     input_group = parser.add_mutually_exclusive_group(required=True)
-    input_group.add_argument(
-        "--vacancy", type=str, help="Path to vacancy file (PDF, DOCX, TXT)"
-    )
+    input_group.add_argument("--vacancy", type=str, help="Path to vacancy file (PDF, DOCX, TXT)")
     input_group.add_argument("--text", type=str, help="Vacancy text directly")
 
     # Matching options
@@ -178,9 +177,7 @@ def main() -> None:
 
     # Output options
     parser.add_argument("--json", action="store_true", help="Output results as JSON")
-    parser.add_argument(
-        "--quiet", action="store_true", help="Suppress logging output"
-    )
+    parser.add_argument("--quiet", action="store_true", help="Suppress logging output")
 
     args = parser.parse_args()
 
@@ -196,7 +193,6 @@ def main() -> None:
         logger.info(f"Filtering results to score range: {score_range[0]}-{score_range[1]}")
 
     # Determine vacancy text
-    vacancy_input = args.vacancy or args.text
     is_file = args.vacancy is not None
 
     if args.llm:
@@ -226,9 +222,12 @@ def main() -> None:
 
         # Output
         if args.json:
-            print(json.dumps(llm_result_to_dict(requirements, scores), indent=2, ensure_ascii=False))
+            print(
+                json.dumps(llm_result_to_dict(requirements, scores), indent=2, ensure_ascii=False)
+            )
         else:
             from resume_matcher.models.llm_scorer import print_scored_results
+
             print_scored_results(requirements, scores)
 
         if not scores:

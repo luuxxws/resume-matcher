@@ -62,9 +62,9 @@ Resume text (can be in Russian and English):
         response = GROQ_CLIENT.chat.completions.create(
             model=GROQ_MODEL,
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.0,          # maximum determinism
+            temperature=0.0,  # maximum determinism
             max_tokens=1000,
-            top_p=1.0
+            top_p=1.0,
         )
 
         content = response.choices[0].message.content.strip()
@@ -102,7 +102,7 @@ def import_resume(file_path: Path | str, force_update: bool = False) -> dict[str
     raw_text = convert_file_to_text(path)
     if not raw_text.strip():
         return {"error": "Text was not extracted"}
-    
+
     # Cleaning
     cleaned_text = clean_ocr_text(raw_text)
 
@@ -125,7 +125,7 @@ def import_resume(file_path: Path | str, force_update: bool = False) -> dict[str
             cleaned_text=cleaned_text,
             json_data=json_data,
             embedding=embedding,
-            force_update=force_update
+            force_update=force_update,
         )
         result["stored"] = True
     except Exception as e:

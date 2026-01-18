@@ -70,7 +70,8 @@ def store_resume(
     abs_path = str(file_path.absolute())
 
     with get_connection() as conn, conn.cursor() as cur:
-        cur.execute("""
+        cur.execute(
+            """
                 INSERT INTO resumes (
                     file_name, file_path, file_hash, raw_text, cleaned_text, json_data, embedding
                 )
@@ -83,33 +84,37 @@ def store_resume(
                     embedding = EXCLUDED.embedding,
                     updated_at = NOW()
                 RETURNING id
-            """, (
-            file_path.name,
-            abs_path,
-            file_hash,
-            raw_text,
-            cleaned_text,
-            json.dumps(json_data),
-            embedding.tolist()
-        ))
+            """,
+            (
+                file_path.name,
+                abs_path,
+                file_hash,
+                raw_text,
+                cleaned_text,
+                json.dumps(json_data),
+                embedding.tolist(),
+            ),
+        )
 
         inserted_id = cur.fetchone()["id"]
         logger.info(f"Saved/Updated resume: {file_path.name} (id={inserted_id})")
         return inserted_id
-        
+
 
 def get_resume_by_path(file_path: Path) -> dict[str, Any] | None:
     """Gets a resume record by file_path"""
     with get_connection() as conn, conn.cursor() as cur:
-        cur.execute("""
+        cur.execute(
+            """
                 SELECT id, file_name, file_hash, json_data, embedding
                 FROM resumes
                 WHERE file_path = %s
-            """, (str(file_path.absolute()),))
+            """,
+            (str(file_path.absolute()),),
+        )
         row = cur.fetchone()
         if row:
             if row["embedding"] is not None:
                 row["embedding"] = np.array(row["embedding"])
             return row
         return None
-        

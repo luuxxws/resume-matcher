@@ -44,6 +44,7 @@ def process_wrapper(args):
     error = result.get("error")
     return file_path, success, error
 
+
 def import_folder(
     resumes_dir: Path,
     workers: int = 8,
@@ -55,7 +56,7 @@ def import_folder(
     if not resumes_dir.is_dir():
         logger.error(f"Folder not found: {resumes_dir}")
         return
-    
+
     if only_sync:
         print("Mode: only-sync - only syncing deleted resumes")
         sync_deleted_resumes(resumes_dir)
@@ -73,12 +74,11 @@ def import_folder(
     args = [(f, force_update, dry_run) for f in files]
 
     with mp.Pool(processes=workers) as pool:
-        results = list(tqdm(
-            pool.imap(process_wrapper, args),
-            total=total,
-            desc="Resume processing",
-            unit="file"
-        ))
+        results = list(
+            tqdm(
+                pool.imap(process_wrapper, args), total=total, desc="Resume processing", unit="file"
+            )
+        )
 
     success = sum(1 for _, ok, _ in results if ok)
     errors = [(p.name, err) for p, ok, err in results if not ok and err]
@@ -90,7 +90,7 @@ def import_folder(
         for fname, err in errors[:5]:
             print(f"  {fname}: {err}")
         if len(errors) > 5:
-            print(f"  ... and {len(errors)-5} more")
+            print(f"  ... and {len(errors) - 5} more")
 
     if not dry_run:
         print("\nDeletion synchronization...")
@@ -98,24 +98,13 @@ def import_folder(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Mass import of resumes into PostgreSQL"
-    )
+    parser = argparse.ArgumentParser(description="Mass import of resumes into PostgreSQL")
 
     # Directory option
-    parser.add_argument(
-        "--dir",
-        default="data/resumes",
-        help="Resume folder"
-    )
+    parser.add_argument("--dir", default="data/resumes", help="Resume folder")
 
     # Workers option
-    parser.add_argument(
-        "--workers",
-        type=int,
-        default=mp.cpu_count(),
-        help="Number of processes"
-    )
+    parser.add_argument("--workers", type=int, default=mp.cpu_count(), help="Number of processes")
 
     # Force update option
     parser.add_argument(
@@ -142,7 +131,7 @@ def main() -> None:
         action="store_true",
         help="Only sync deleted files (no imports whatsoever)",
     )
-    
+
     # Quiet option
     parser.add_argument(
         "--quiet",

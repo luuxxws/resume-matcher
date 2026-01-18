@@ -31,9 +31,9 @@ logger.info(f"Embedding dimension: {DIMENSION}")
 
 
 def get_embedding(
-        text: str,
-        normalize: bool = True,
-        batch_size: int = 1,
+    text: str,
+    normalize: bool = True,
+    batch_size: int = 1,
 ) -> np.ndarray:
     """
     Generates embedding for a single text.
@@ -53,7 +53,7 @@ def get_embedding(
 
 
 def batch_get_embeddings(
-        texts: list[str],
+    texts: list[str],
     normalize: bool = True,
     batch_size: int = 32,
 ) -> np.ndarray:
@@ -63,7 +63,7 @@ def batch_get_embeddings(
     """
     if not texts:
         return np.array([], dtype=np.float32).reshape(0, DIMENSION)
-    
+
     cleaned_texts = [t if t and t.strip() else "" for t in texts]
 
     embeddings = model.encode(
@@ -81,6 +81,7 @@ def batch_get_embeddings(
 
 
 # –– Caching based on file –––––––––––––––––––––––––––––––––––––––––––––––––––––
+
 
 def get_cached_embedding(file_path: str | Path) -> np.ndarray | None:
     """Attempts to load embedding from cache"""
@@ -124,8 +125,8 @@ def get_or_compute_embedding(
             return cached
 
     emb = get_embedding(text)
-    
+
     if file_path:
         save_embedding_to_cache(file_path, emb)
-    
+
     return emb

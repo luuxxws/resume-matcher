@@ -17,7 +17,7 @@ from __future__ import annotations
 import logging
 import tempfile
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import FastAPI, File, Form, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -33,12 +33,14 @@ logger = logging.getLogger(__name__)
 
 class HealthResponse(BaseModel):
     """Health check response."""
+
     status: str = "ok"
     version: str = "0.1.0"
 
 
 class StatsResponse(BaseModel):
     """Database statistics response."""
+
     total_resumes: int
     with_embeddings: int
     with_parsed_data: int
@@ -46,6 +48,7 @@ class StatsResponse(BaseModel):
 
 class CandidateInfo(BaseModel):
     """Candidate information extracted from resume."""
+
     name: str | None = None
     position: str | None = None
     email: str | None = None
@@ -57,6 +60,7 @@ class CandidateInfo(BaseModel):
 
 class MatchedResumeResponse(BaseModel):
     """Single matched resume in embedding mode."""
+
     rank: int
     id: int
     file_name: str
@@ -67,6 +71,7 @@ class MatchedResumeResponse(BaseModel):
 
 class EmbeddingMatchResponse(BaseModel):
     """Response for embedding-only matching."""
+
     mode: str = "embedding"
     total_resumes_in_db: int
     matches_found: int
@@ -75,6 +80,7 @@ class EmbeddingMatchResponse(BaseModel):
 
 class LLMMatchedResumeResponse(BaseModel):
     """Single matched resume in LLM mode."""
+
     rank: int
     id: int
     file_name: str
@@ -91,6 +97,7 @@ class LLMMatchedResumeResponse(BaseModel):
 
 class VacancyInfo(BaseModel):
     """Parsed vacancy information."""
+
     job_title: str
     seniority_level: str | None
     must_have_skills: list[str]
@@ -101,6 +108,7 @@ class VacancyInfo(BaseModel):
 
 class LLMMatchResponse(BaseModel):
     """Response for LLM-powered matching."""
+
     mode: str = "llm"
     vacancy: VacancyInfo
     matches_found: int
@@ -109,6 +117,7 @@ class LLMMatchResponse(BaseModel):
 
 class ResumeResponse(BaseModel):
     """Single resume details."""
+
     id: int
     file_name: str
     file_path: str
@@ -118,6 +127,7 @@ class ResumeResponse(BaseModel):
 
 class ResumeListResponse(BaseModel):
     """List of resumes."""
+
     total: int
     limit: int
     offset: int
@@ -126,6 +136,7 @@ class ResumeListResponse(BaseModel):
 
 class ImportResponse(BaseModel):
     """Import operation response."""
+
     status: str
     files_found: int
     message: str
@@ -133,12 +144,15 @@ class ImportResponse(BaseModel):
 
 class MatchRequest(BaseModel):
     """Request body for matching."""
+
     vacancy_text: str = Field(..., description="Vacancy/job description text")
     top_n: int = Field(default=10, ge=1, le=100, description="Number of results")
     min_score: float = Field(default=0, ge=0, le=100, description="Minimum score (0-100)")
     max_score: float = Field(default=100, ge=0, le=100, description="Maximum score (0-100)")
     use_llm: bool = Field(default=False, description="Use LLM for intelligent re-ranking")
-    embedding_candidates: int = Field(default=30, ge=1, le=100, description="Candidates for LLM re-ranking")
+    embedding_candidates: int = Field(
+        default=30, ge=1, le=100, description="Candidates for LLM re-ranking"
+    )
 
 
 # =============================================================================
@@ -216,7 +230,9 @@ def register_routes(app: FastAPI) -> None:
                 cur.execute("SELECT COUNT(*) as count FROM resumes WHERE embedding IS NOT NULL")
                 with_embedding = cur.fetchone()["count"]
 
-                cur.execute("SELECT COUNT(*) as count FROM resumes WHERE json_data IS NOT NULL AND json_data != '{}'")
+                cur.execute(
+                    "SELECT COUNT(*) as count FROM resumes WHERE json_data IS NOT NULL AND json_data != '{}'"
+                )
                 with_json = cur.fetchone()["count"]
 
             return StatsResponse(
@@ -229,7 +245,7 @@ def register_routes(app: FastAPI) -> None:
             raise HTTPException(
                 status_code=503,
                 detail="Database unavailable. Make sure PostgreSQL is running and .env is configured correctly.",
-            )
+            ) from None
 
     # =========================================================================
     # Matching
@@ -263,8 +279,7 @@ def register_routes(app: FastAPI) -> None:
             # Apply score range filter
             if request.min_score > 0 or request.max_score < 100:
                 scores = [
-                    s for s in scores
-                    if request.min_score <= s.combined_score <= request.max_score
+                    s for s in scores if request.min_score <= s.combined_score <= request.max_score
                 ]
 
             return LLMMatchResponse(
@@ -308,8 +323,7 @@ def register_routes(app: FastAPI) -> None:
             matches = result.matches
             if request.min_score > 0 or request.max_score < 100:
                 matches = [
-                    m for m in matches
-                    if request.min_score <= m.score_percent <= request.max_score
+                    m for m in matches if request.min_score <= m.score_percent <= request.max_score
                 ]
 
             return EmbeddingMatchResponse(
@@ -338,7 +352,7 @@ def register_routes(app: FastAPI) -> None:
 
     @app.post("/match/file", tags=["Matching"])
     async def match_vacancy_file(
-        vacancy_file: UploadFile = File(..., description="Vacancy file (PDF, DOCX, TXT)"),
+        vacancy_file: Annotated[UploadFile, File(description="Vacancy file (PDF, DOCX, TXT)")],
         top_n: int = Query(default=10, ge=1, le=100),
         min_score: float = Query(default=0, ge=0, le=100),
         max_score: float = Query(default=100, ge=0, le=100),
@@ -457,7 +471,7 @@ def register_routes(app: FastAPI) -> None:
             raise HTTPException(
                 status_code=503,
                 detail="Database unavailable. Make sure PostgreSQL is running.",
-            )
+            ) from None
 
     @app.get("/resumes/{resume_id}", response_model=ResumeResponse, tags=["Resumes"])
     async def get_resume(resume_id: int) -> ResumeResponse:
@@ -493,7 +507,7 @@ def register_routes(app: FastAPI) -> None:
             raise HTTPException(
                 status_code=503,
                 detail="Database unavailable. Make sure PostgreSQL is running.",
-            )
+            ) from None
 
     @app.delete("/resumes/{resume_id}", tags=["Resumes"])
     async def delete_resume(resume_id: int) -> dict[str, str]:
@@ -517,7 +531,7 @@ def register_routes(app: FastAPI) -> None:
             raise HTTPException(
                 status_code=503,
                 detail="Database unavailable. Make sure PostgreSQL is running.",
-            )
+            ) from None
 
     # =========================================================================
     # Import
@@ -565,7 +579,7 @@ def register_routes(app: FastAPI) -> None:
 
     @app.post("/import/file", tags=["Import"])
     async def import_single_file(
-        file: UploadFile = File(..., description="Resume file (PDF, DOCX, image)"),
+        file: Annotated[UploadFile, File(description="Resume file (PDF, DOCX, image)")],
         force: bool = Query(default=False, description="Force re-import if exists"),
     ) -> dict[str, Any]:
         """

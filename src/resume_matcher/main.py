@@ -68,17 +68,18 @@ def cmd_import(args: argparse.Namespace) -> int:
 def cmd_match(args: argparse.Namespace) -> int:
     """Handle the 'match' subcommand."""
     import json
-    from resume_matcher.services.matcher import (
-        match_vacancy_file,
-        match_vacancy_text,
-        match_vacancy_file_with_llm,
-        match_vacancy_with_llm,
-        print_match_results,
-    )
+
     from resume_matcher.scripts.cli_match import (
-        result_to_dict,
         llm_result_to_dict,
         parse_score_range,
+        result_to_dict,
+    )
+    from resume_matcher.services.matcher import (
+        match_vacancy_file,
+        match_vacancy_file_with_llm,
+        match_vacancy_text,
+        match_vacancy_with_llm,
+        print_match_results,
     )
 
     # Parse score range if provided
@@ -111,9 +112,12 @@ def cmd_match(args: argparse.Namespace) -> int:
 
         # Output
         if args.json:
-            print(json.dumps(llm_result_to_dict(requirements, scores), indent=2, ensure_ascii=False))
+            print(
+                json.dumps(llm_result_to_dict(requirements, scores), indent=2, ensure_ascii=False)
+            )
         else:
             from resume_matcher.models.llm_scorer import print_scored_results
+
             print_scored_results(requirements, scores)
 
         return 0 if scores else 1
@@ -180,7 +184,9 @@ def cmd_info(args: argparse.Namespace) -> int:
         with_embedding = cur.fetchone()["count"]
 
         # With JSON data
-        cur.execute("SELECT COUNT(*) as count FROM resumes WHERE json_data IS NOT NULL AND json_data != '{}'")
+        cur.execute(
+            "SELECT COUNT(*) as count FROM resumes WHERE json_data IS NOT NULL AND json_data != '{}'"
+        )
         with_json = cur.fetchone()["count"]
 
     print("\n" + "=" * 50)
@@ -210,7 +216,8 @@ Examples:
         """,
     )
     parser.add_argument(
-        "--quiet", "-q",
+        "--quiet",
+        "-q",
         action="store_true",
         help="Suppress logging output",
     )
@@ -226,18 +233,21 @@ Examples:
         description="Mass import of resumes with OCR, text extraction, and LLM parsing",
     )
     import_parser.add_argument(
-        "--dir", "-d",
+        "--dir",
+        "-d",
         default="data/resumes",
         help="Folder containing resume files (default: data/resumes)",
     )
     import_parser.add_argument(
-        "--workers", "-w",
+        "--workers",
+        "-w",
         type=int,
         default=mp.cpu_count(),
         help=f"Number of parallel workers (default: {mp.cpu_count()})",
     )
     import_parser.add_argument(
-        "--force", "-f",
+        "--force",
+        "-f",
         action="store_true",
         help="Force re-import all files (ignore hash check)",
     )
@@ -247,7 +257,8 @@ Examples:
         help="Simulation only, don't write to database",
     )
     import_parser.add_argument(
-        "--limit", "-l",
+        "--limit",
+        "-l",
         type=int,
         help="Limit number of files to import (for testing)",
     )
@@ -267,17 +278,20 @@ Examples:
     )
     match_input = match_parser.add_mutually_exclusive_group(required=True)
     match_input.add_argument(
-        "--vacancy", "-v",
+        "--vacancy",
+        "-v",
         type=str,
         help="Path to vacancy file (PDF, DOCX, TXT)",
     )
     match_input.add_argument(
-        "--text", "-t",
+        "--text",
+        "-t",
         type=str,
         help="Vacancy text directly",
     )
     match_parser.add_argument(
-        "--top", "-n",
+        "--top",
+        "-n",
         type=int,
         default=10,
         help="Number of top matches to return (default: 10)",
@@ -313,7 +327,7 @@ Examples:
     # =========================================================================
     # INFO subcommand
     # =========================================================================
-    info_parser = subparsers.add_parser(
+    subparsers.add_parser(
         "info",
         help="Show database statistics",
         description="Display information about the resume database",
@@ -328,18 +342,21 @@ Examples:
         description="Start the FastAPI server for REST API access",
     )
     serve_parser.add_argument(
-        "--host", "-H",
+        "--host",
+        "-H",
         default="0.0.0.0",
         help="Host to bind to (default: 0.0.0.0)",
     )
     serve_parser.add_argument(
-        "--port", "-p",
+        "--port",
+        "-p",
         type=int,
         default=8000,
         help="Port to bind to (default: 8000)",
     )
     serve_parser.add_argument(
-        "--reload", "-r",
+        "--reload",
+        "-r",
         action="store_true",
         help="Enable auto-reload for development",
     )

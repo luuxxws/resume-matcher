@@ -85,6 +85,10 @@ def test_batch_embedding():
     print("Vector norms:", np.linalg.norm(embeddings, axis=1))
 
 
+import pytest
+
+
+@pytest.mark.skip(reason="Requires manual file_path argument - run with: pytest --file path/to/resume.pdf")
 def test_file_embedding(file_path: Path):
     """Test on a real file from data/resumes"""
     print("\n" + "="*70)

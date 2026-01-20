@@ -15,17 +15,18 @@ load_dotenv()
 
 # ─── Paths variables ────────────────────────────────────────–––––––––––––––––––––
 
+
 def _get_data_dir() -> Path:
     """Get the data directory - supports both local dev and Docker deployment."""
     # 1. Check environment variable (highest priority)
     if env_data_dir := os.getenv("DATA_DIR"):
         return Path(env_data_dir)
-    
+
     # 2. Check if we're in Docker (/app/data exists)
     docker_data = Path("/app/data")
     if docker_data.exists():
         return docker_data
-    
+
     # 3. Local development: relative to project root
     # Try to find project root by looking for pyproject.toml
     current = Path(__file__).resolve().parent
@@ -33,7 +34,7 @@ def _get_data_dir() -> Path:
         if (current / "pyproject.toml").exists():
             return current / "data"
         current = current.parent
-    
+
     # 4. Fallback: relative to this file (may not work when installed)
     return Path(__file__).resolve().parent.parent.parent / "data"
 

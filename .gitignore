@@ -17,9 +17,9 @@ data/embedding_cache/
 *.docx
 *.doc
 
-# Keep taxonomy data structure
-data/taxonomy/*
-!data/taxonomy/.gitkeep
+# Keep taxonomy data (ESCO occupations and skills)
+# These are needed for matching
+!data/taxonomy/
 
 # =============================================================================
 # Python

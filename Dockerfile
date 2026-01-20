@@ -52,6 +52,9 @@ COPY --from=builder /app/.venv /app/.venv
 # Copy docker init scripts
 COPY docker/ docker/
 
+# Copy taxonomy data (ESCO occupations and skills)
+COPY data/taxonomy/ data/taxonomy/
+
 ENV PATH="/app/.venv/bin:$PATH"
 
 RUN mkdir -p data/resumes data/vacancies data/output data/embedding_cache

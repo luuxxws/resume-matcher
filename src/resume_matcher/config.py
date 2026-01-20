@@ -2,6 +2,7 @@
 
 import csv
 import logging
+import os
 from pathlib import Path
 
 import torch
@@ -14,9 +15,30 @@ load_dotenv()
 
 # ─── Paths variables ────────────────────────────────────────–––––––––––––––––––––
 
-BASE_DIR: Path = Path(__file__).resolve().parent.parent.parent
+def _get_data_dir() -> Path:
+    """Get the data directory - supports both local dev and Docker deployment."""
+    # 1. Check environment variable (highest priority)
+    if env_data_dir := os.getenv("DATA_DIR"):
+        return Path(env_data_dir)
+    
+    # 2. Check if we're in Docker (/app/data exists)
+    docker_data = Path("/app/data")
+    if docker_data.exists():
+        return docker_data
+    
+    # 3. Local development: relative to project root
+    # Try to find project root by looking for pyproject.toml
+    current = Path(__file__).resolve().parent
+    for _ in range(5):  # Go up max 5 levels
+        if (current / "pyproject.toml").exists():
+            return current / "data"
+        current = current.parent
+    
+    # 4. Fallback: relative to this file (may not work when installed)
+    return Path(__file__).resolve().parent.parent.parent / "data"
 
-DATA_DIR: Path = BASE_DIR / "data"
+
+DATA_DIR: Path = _get_data_dir()
 RESUMES_DIR: Path = DATA_DIR / "resumes"  # folder with 10k+ resumes
 VACANCIES_DIR: Path = DATA_DIR / "vacancies"  # vacancy descriptions (txt, md, pdf...)
 OUTPUT_DIR: Path = DATA_DIR / "output"  # results: csv, json, embeddings cache
@@ -28,7 +50,7 @@ for d in [DATA_DIR, RESUMES_DIR, VACANCIES_DIR, OUTPUT_DIR]:
 # ─── Embedding variables ────────────────────────────────────────–––––––––––––––––
 
 EMBEDDING_MODEL_NAME = "intfloat/multilingual-e5-large"
-EMBEDDING_CACHE_DIR = Path(__file__).parent.parent.parent / "data" / "embedding_cache"
+EMBEDDING_CACHE_DIR = DATA_DIR / "embedding_cache"
 DEVICE = (
     "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
 )
@@ -40,7 +62,7 @@ KNOWN_OCCUPATIONS: set[str] = set()
 OCCUPATION_NORMALIZED: dict[str, str] = {}
 KNOWN_SKILLS: set[str] = set()
 OCCUPATION_TO_SKILLS: dict[str, list[str]] = {}
-ESCO_TAXONOMY_DIR = Path(__file__).parent.parent.parent / "data" / "taxonomy"
+ESCO_TAXONOMY_DIR = DATA_DIR / "taxonomy"
 
 
 def load_esco_occupations():

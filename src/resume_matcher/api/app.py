@@ -498,7 +498,7 @@ def register_routes(app: FastAPI) -> None:
                     {
                         "file_hash": d["file_hash"][:16] + "...",
                         "count": d["count"],
-                        "files": list(zip(d["ids"], d["file_names"])),
+                        "files": list(zip(d["ids"], d["file_names"], strict=True)),
                     }
                     for d in duplicates
                 ],

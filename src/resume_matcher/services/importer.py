@@ -17,7 +17,7 @@ from typing import Any
 from dotenv import load_dotenv
 from groq import Groq
 
-from ..db import get_connection, store_resume, content_hash_exists
+from ..db import content_hash_exists, get_connection, store_resume
 from ..models.embedding import get_or_compute_embedding
 from ..utils.convert_file_to_text import convert_file_to_text
 from ..utils.text_cleaner import clean_ocr_text

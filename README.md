@@ -7,8 +7,6 @@
 
 An AI-powered resume matching system that finds the best candidates for job vacancies using semantic search and LLM-based scoring.
 
-![Resume Matcher UI](docs/screenshot.png)
-
 ## Features
 
 ### Core

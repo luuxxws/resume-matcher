@@ -118,3 +118,99 @@ def get_resume_by_path(file_path: Path) -> dict[str, Any] | None:
                 row["embedding"] = np.array(row["embedding"])
             return row
         return None
+
+
+def content_hash_exists(file_path: Path) -> dict[str, Any] | None:
+    """
+    Checks if a resume with the same content (file_hash) already exists.
+    Returns the existing resume info if found, None otherwise.
+    """
+    file_hash = get_file_hash(file_path)
+    with get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+                SELECT id, file_name, file_path
+                FROM resumes
+                WHERE file_hash = %s
+                LIMIT 1
+            """,
+            (file_hash,),
+        )
+        return cur.fetchone()
+
+
+def find_duplicates() -> list[dict[str, Any]]:
+    """
+    Finds all duplicate resumes (same file_hash).
+    Returns groups of duplicates with their info.
+    """
+    with get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT 
+                file_hash,
+                COUNT(*) as count,
+                array_agg(id ORDER BY updated_at DESC) as ids,
+                array_agg(file_name ORDER BY updated_at DESC) as file_names
+            FROM resumes
+            GROUP BY file_hash
+            HAVING COUNT(*) > 1
+            ORDER BY COUNT(*) DESC
+            """
+        )
+        return cur.fetchall() or []
+
+
+def clean_duplicates(dry_run: bool = True) -> dict[str, Any]:
+    """
+    Removes duplicate resumes, keeping the most recently updated version.
+    
+    Args:
+        dry_run: If True, only reports what would be deleted without actually deleting.
+    
+    Returns:
+        Summary of duplicates found and (optionally) deleted.
+    """
+    duplicates = find_duplicates()
+    
+    if not duplicates:
+        return {
+            "duplicate_groups": 0,
+            "total_duplicates": 0,
+            "deleted_count": 0,
+            "deleted_ids": [],
+            "dry_run": dry_run,
+        }
+    
+    ids_to_delete = []
+    for group in duplicates:
+        # Keep the first ID (most recently updated), delete the rest
+        ids_to_delete.extend(group["ids"][1:])
+    
+    deleted_count = 0
+    if not dry_run and ids_to_delete:
+        with get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "DELETE FROM resumes WHERE id = ANY(%s) RETURNING id",
+                (ids_to_delete,),
+            )
+            deleted_count = cur.rowcount
+            logger.info(f"Deleted {deleted_count} duplicate resumes")
+    
+    return {
+        "duplicate_groups": len(duplicates),
+        "total_duplicates": sum(d["count"] - 1 for d in duplicates),
+        "deleted_count": deleted_count if not dry_run else 0,
+        "would_delete": len(ids_to_delete),
+        "deleted_ids": ids_to_delete if not dry_run else [],
+        "dry_run": dry_run,
+        "details": [
+            {
+                "file_hash": d["file_hash"][:16] + "...",
+                "count": d["count"],
+                "keep": d["file_names"][0],
+                "delete": d["file_names"][1:],
+            }
+            for d in duplicates
+        ],
+    }

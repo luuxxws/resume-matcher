@@ -1,0 +1,183 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base styles */
+:root {
+  --color-neon-cyan: #00f5d4;
+  --color-neon-pink: #f72585;
+  --color-neon-purple: #7b2cbf;
+  --color-void-900: #0a0a0f;
+  --color-void-800: #12121a;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 245, 212, 0.3) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(0, 245, 212, 0.3);
+  border-radius: 3px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 245, 212, 0.5);
+}
+
+body {
+  font-family: 'Outfit', system-ui, sans-serif;
+  background: var(--color-void-900);
+  color: #e2e8f0;
+  min-height: 100vh;
+}
+
+/* Gradient text */
+.text-gradient {
+  background: linear-gradient(135deg, var(--color-neon-cyan), var(--color-neon-purple));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glowing border effect */
+.glow-border {
+  position: relative;
+}
+
+.glow-border::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  background: linear-gradient(135deg, var(--color-neon-cyan), var(--color-neon-purple));
+  border-radius: inherit;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.glow-border:hover::before {
+  opacity: 1;
+}
+
+/* Card hover effect */
+.card-hover {
+  transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 40px -10px rgba(0, 245, 212, 0.2);
+}
+
+/* Button styles */
+.btn-primary {
+  @apply bg-gradient-to-r from-neon-cyan to-neon-purple text-void-900 font-semibold 
+         px-6 py-3 rounded-lg transition-all duration-300 
+         hover:shadow-neon hover:scale-105 active:scale-95;
+}
+
+.btn-secondary {
+  @apply border border-neon-cyan/30 text-neon-cyan px-6 py-3 rounded-lg
+         transition-all duration-300 hover:bg-neon-cyan/10 hover:border-neon-cyan/50;
+}
+
+/* Input styles */
+.input-field {
+  @apply w-full bg-void-700/50 border border-void-600 rounded-lg px-4 py-3
+         text-slate-200 placeholder-slate-500 
+         focus:outline-none focus:border-neon-cyan/50 focus:ring-2 focus:ring-neon-cyan/20
+         transition-all duration-200;
+}
+
+.textarea-field {
+  @apply w-full bg-void-700/50 border border-void-600 rounded-lg px-4 py-3
+         text-slate-200 placeholder-slate-500 resize-none
+         focus:outline-none focus:border-neon-cyan/50 focus:ring-2 focus:ring-neon-cyan/20
+         transition-all duration-200;
+}
+
+/* Badge styles */
+.badge {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+.badge-cyan {
+  @apply bg-neon-cyan/10 text-neon-cyan border border-neon-cyan/20;
+}
+
+.badge-pink {
+  @apply bg-neon-pink/10 text-neon-pink border border-neon-pink/20;
+}
+
+.badge-purple {
+  @apply bg-neon-purple/10 text-neon-purple border border-neon-purple/20;
+}
+
+.badge-yellow {
+  @apply bg-neon-yellow/10 text-neon-yellow border border-neon-yellow/20;
+}
+
+/* Stagger animation delays */
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.2s; }
+.stagger-5 { animation-delay: 0.25s; }
+.stagger-6 { animation-delay: 0.3s; }
+.stagger-7 { animation-delay: 0.35s; }
+.stagger-8 { animation-delay: 0.4s; }
+
+/* Score ring */
+.score-ring {
+  --score: 0;
+  --color: var(--color-neon-cyan);
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--color) calc(var(--score) * 3.6deg),
+    rgba(255,255,255,0.1) 0
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.score-ring-inner {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--color-void-800);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* Loading skeleton */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.05) 25%,
+    rgba(255,255,255,0.1) 50%,
+    rgba(255,255,255,0.05) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}

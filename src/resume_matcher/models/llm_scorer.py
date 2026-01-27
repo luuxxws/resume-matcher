@@ -158,6 +158,7 @@ def score_candidate(
     candidate_json: dict[str, Any],
     candidate_name: str,
     embedding_similarity: float,
+    lang: str = "en",
 ) -> CandidateScore:
     """
     Scores a single candidate against vacancy requirements using LLM.
@@ -167,9 +168,17 @@ def score_candidate(
     candidate_experience = candidate_json.get("years_experience")
     candidate_summary = candidate_json.get("summary", "")
 
+    # Language instruction for output
+    lang_instruction = ""
+    if lang == "ru":
+        lang_instruction = """
+LANGUAGE: Respond in Russian for all text fields (strengths, concerns, explanation).
+Keep technical terms in English: Python, Docker, AWS, PostgreSQL, React, etc.
+"""
+
     prompt = f"""You are an expert technical recruiter. Score this candidate against the job requirements.
 Return ONLY a valid JSON object, without extra text, without markdown.
-
+{lang_instruction}
 Job Requirements:
 - Title: {requirements.job_title}
 - Seniority: {requirements.seniority_level or "Not specified"}
@@ -271,44 +280,73 @@ def rerank_with_llm(
     vacancy_text: str,
     candidates: list[dict[str, Any]],
     top_n: int = 10,
+    lang: str = "en",
+    max_workers: int = 5,
 ) -> tuple[VacancyRequirements, list[CandidateScore]]:
     """
-    Re-ranks candidates using LLM scoring.
+    Re-ranks candidates using LLM scoring with parallel processing.
 
     Args:
         vacancy_text: The vacancy/job description text
         candidates: List of candidate dicts with keys:
             - id, file_name, file_path, similarity_score, json_data
         top_n: Number of results to return after re-ranking
+        lang: Language for LLM responses ('en' or 'ru')
+        max_workers: Maximum parallel API calls (default 5 to avoid rate limits)
 
     Returns:
         Tuple of (VacancyRequirements, list of CandidateScore sorted by combined_score)
     """
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
     logger.info("Parsing vacancy requirements...")
     requirements = parse_vacancy(vacancy_text)
 
     logger.info(f"Vacancy: {requirements.job_title}")
     logger.info(f"Must-have skills: {requirements.must_have_skills}")
 
-    scores: list[CandidateScore] = []
-
-    logger.info(f"Scoring {len(candidates)} candidates with LLM...")
-    for i, candidate in enumerate(candidates):
+    def score_single_candidate(candidate: dict[str, Any], index: int) -> CandidateScore:
+        """Score a single candidate (for parallel execution)."""
         candidate_name = candidate.get("json_data", {}).get("full_name", "Unknown")
-        logger.info(f"  [{i + 1}/{len(candidates)}] Scoring: {candidate_name}")
+        logger.info(f"  [{index + 1}/{len(candidates)}] Scoring: {candidate_name}")
 
         score = score_candidate(
             requirements=requirements,
             candidate_json=candidate.get("json_data", {}),
             candidate_name=candidate_name,
             embedding_similarity=candidate.get("similarity_score", 0.0),
+            lang=lang,
         )
 
         # Set IDs from candidate data
         score.candidate_id = candidate.get("id", 0)
         score.file_name = candidate.get("file_name", "")
 
-        scores.append(score)
+        return score
+
+    scores: list[CandidateScore] = []
+
+    # Use parallel processing for faster scoring
+    logger.info(f"Scoring {len(candidates)} candidates with LLM (parallel, {max_workers} workers)...")
+    
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        # Submit all scoring tasks
+        future_to_candidate = {
+            executor.submit(score_single_candidate, candidate, i): i
+            for i, candidate in enumerate(candidates)
+        }
+
+        # Collect results as they complete
+        for future in as_completed(future_to_candidate):
+            try:
+                score = future.result()
+                scores.append(score)
+            except Exception as e:
+                idx = future_to_candidate[future]
+                logger.error(f"Failed to score candidate {idx}: {e}")
+                # Continue with other candidates
+
+    logger.info(f"Completed scoring {len(scores)}/{len(candidates)} candidates")
 
     # Sort by combined score (descending)
     scores.sort(key=lambda x: x.combined_score, reverse=True)

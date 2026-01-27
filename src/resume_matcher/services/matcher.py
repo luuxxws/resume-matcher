@@ -145,6 +145,8 @@ def _find_similar_resumes(
 
     Uses cosine distance: 1 - cosine_similarity
     So we need to convert back: similarity = 1 - distance
+    
+    Deduplicates by file_hash to avoid showing multiple versions of the same resume.
     """
     # pgvector's <=> operator returns cosine distance (0 = identical, 2 = opposite)
     # similarity = 1 - distance (for normalized vectors)
@@ -153,30 +155,32 @@ def _find_similar_resumes(
 
     with get_connection() as conn, conn.cursor() as cur:
         # Query using pgvector cosine distance operator <=>
+        # Uses DISTINCT ON (file_hash) to deduplicate identical content
+        # Keeps the most recently updated version of each unique resume
         cur.execute(
             """
-            SELECT
+            SELECT DISTINCT ON (file_hash)
                 id,
                 file_name,
                 file_path,
+                file_hash,
                 json_data,
                 1 - (embedding <=> %s::vector) AS similarity
             FROM resumes
             WHERE embedding IS NOT NULL
               AND (embedding <=> %s::vector) <= %s
-            ORDER BY embedding <=> %s::vector
-            LIMIT %s
+            ORDER BY file_hash, updated_at DESC
             """,
             (
                 vacancy_embedding.tolist(),
                 vacancy_embedding.tolist(),
                 max_distance,
-                vacancy_embedding.tolist(),
-                top_n,
             ),
         )
-
-        rows = cur.fetchall()
+        
+        # Fetch all deduplicated rows, then sort by similarity and limit
+        all_rows = cur.fetchall()
+        rows = sorted(all_rows, key=lambda r: r["similarity"], reverse=True)[:top_n]
 
     matches = []
     for row in rows:
@@ -249,6 +253,7 @@ def match_vacancy_with_llm(
     top_n: int = 10,
     embedding_candidates: int = 30,
     min_similarity: float = 0.0,
+    lang: str = "en",
 ) -> tuple[VacancyRequirements, list[CandidateScore]]:
     """
     Two-stage matching: embedding search + LLM re-ranking.
@@ -324,11 +329,12 @@ def match_vacancy_with_llm(
     ]
 
     # Stage 2: Re-rank with LLM
-    logger.info(f"Stage 2: Re-ranking {len(candidates)} candidates with LLM...")
+    logger.info(f"Stage 2: Re-ranking {len(candidates)} candidates with LLM (lang={lang})...")
     requirements, scores = rerank_with_llm(
         vacancy_text=cleaned_vacancy,
         candidates=candidates,
         top_n=top_n,
+        lang=lang,
     )
 
     return requirements, scores

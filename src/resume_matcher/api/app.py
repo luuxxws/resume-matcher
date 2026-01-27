@@ -153,6 +153,7 @@ class MatchRequest(BaseModel):
     embedding_candidates: int = Field(
         default=30, ge=1, le=100, description="Candidates for LLM re-ranking"
     )
+    lang: str = Field(default="en", description="Language for LLM responses: 'en' or 'ru'")
 
 
 # =============================================================================
@@ -274,6 +275,7 @@ def register_routes(app: FastAPI) -> None:
                 top_n=request.top_n,
                 embedding_candidates=request.embedding_candidates,
                 min_similarity=min_similarity,
+                lang=request.lang,
             )
 
             # Apply score range filter
@@ -284,12 +286,12 @@ def register_routes(app: FastAPI) -> None:
 
             return LLMMatchResponse(
                 vacancy=VacancyInfo(
-                    job_title=requirements.job_title,
+                    job_title=requirements.job_title or "Unknown Position",
                     seniority_level=requirements.seniority_level,
-                    must_have_skills=requirements.must_have_skills,
-                    nice_to_have_skills=requirements.nice_to_have_skills,
+                    must_have_skills=requirements.must_have_skills or [],
+                    nice_to_have_skills=requirements.nice_to_have_skills or [],
                     min_years_experience=requirements.min_years_experience,
-                    summary=requirements.summary,
+                    summary=requirements.summary or "No summary available",
                 ),
                 matches_found=len(scores),
                 matches=[
@@ -472,6 +474,57 @@ def register_routes(app: FastAPI) -> None:
                 status_code=503,
                 detail="Database unavailable. Make sure PostgreSQL is running.",
             ) from None
+
+    # =========================================================================
+    # Duplicates Management (must come before /resumes/{resume_id})
+    # =========================================================================
+
+    @app.get("/resumes/duplicates", tags=["Resumes"])
+    async def find_duplicates() -> dict[str, Any]:
+        """
+        Find duplicate resumes (same content, different file names).
+        
+        Returns groups of duplicates with their file names and IDs.
+        Useful for reviewing duplicates before cleaning.
+        """
+        from resume_matcher.db import find_duplicates as db_find_duplicates
+
+        try:
+            duplicates = db_find_duplicates()
+            return {
+                "duplicate_groups": len(duplicates),
+                "total_duplicates": sum(d["count"] - 1 for d in duplicates),
+                "groups": [
+                    {
+                        "file_hash": d["file_hash"][:16] + "...",
+                        "count": d["count"],
+                        "files": list(zip(d["ids"], d["file_names"])),
+                    }
+                    for d in duplicates
+                ],
+            }
+        except Exception as e:
+            logger.error(f"Error finding duplicates: {e}")
+            raise HTTPException(status_code=503, detail="Database unavailable") from None
+
+    @app.post("/resumes/duplicates/clean", tags=["Resumes"])
+    async def clean_duplicates_endpoint(
+        dry_run: bool = Query(default=True, description="Preview only, don't actually delete"),
+    ) -> dict[str, Any]:
+        """
+        Remove duplicate resumes, keeping the most recently updated version.
+        
+        By default, runs in dry_run mode (preview only).
+        Set dry_run=false to actually delete duplicates.
+        """
+        from resume_matcher.db import clean_duplicates as db_clean_duplicates
+
+        try:
+            result = db_clean_duplicates(dry_run=dry_run)
+            return result
+        except Exception as e:
+            logger.error(f"Error cleaning duplicates: {e}")
+            raise HTTPException(status_code=503, detail="Database unavailable") from None
 
     @app.get("/resumes/{resume_id}", response_model=ResumeResponse, tags=["Resumes"])
     async def get_resume(resume_id: int) -> ResumeResponse:

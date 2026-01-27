@@ -1,0 +1,142 @@
+{
+  "app": {
+    "name": "Resume Matcher",
+    "tagline": "AI-Powered Talent Discovery",
+    "apiConnected": "API Connected",
+    "apiDisconnected": "API Disconnected"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "match": "Match",
+    "resumes": "Resumes",
+    "import": "Import"
+  },
+  "dashboard": {
+    "welcome": "Welcome to",
+    "subtitle": "AI-powered talent discovery and resume matching system",
+    "stats": {
+      "totalResumes": "Total Resumes",
+      "inDatabase": "In database",
+      "withEmbeddings": "With Embeddings",
+      "readyForMatching": "Ready for matching",
+      "parsedData": "Parsed Data",
+      "aiExtracted": "AI-extracted info",
+      "coverage": "Coverage",
+      "embeddingCoverage": "Embedding coverage"
+    },
+    "actions": {
+      "matchCandidates": "Match Candidates",
+      "matchDescription": "Find the best candidates for your job vacancy using AI-powered semantic search",
+      "startMatching": "Start matching",
+      "importResumes": "Import Resumes",
+      "importDescription": "Upload resumes from PDF, DOCX, or images. AI extracts and indexes everything.",
+      "importNow": "Import now"
+    },
+    "howItWorks": "How It Works",
+    "steps": {
+      "import": {
+        "title": "Import Resumes",
+        "description": "Upload PDF, DOCX, or images. AI parses and extracts structured data."
+      },
+      "vacancy": {
+        "title": "Enter Vacancy",
+        "description": "Paste your job description. The system analyzes requirements."
+      },
+      "matches": {
+        "title": "Get Matches",
+        "description": "AI ranks candidates by fit. Use LLM mode for detailed analysis."
+      }
+    },
+    "error": {
+      "apiUnavailable": "Unable to connect to API",
+      "backendHint": "Make sure the backend is running:"
+    }
+  },
+  "match": {
+    "title": "Match Candidates",
+    "subtitle": "Find the best candidates for your job vacancy using AI-powered matching",
+    "vacancyLabel": "Job Vacancy Description",
+    "uploadFile": "Upload file",
+    "placeholder": "Paste the job description here...\n\nExample:\nWe are looking for a Senior Python Developer with 5+ years of experience.\n\nRequired skills:\n- Python, FastAPI, PostgreSQL\n- Docker, Kubernetes\n- Machine Learning basics\n\nNice to have:\n- AWS/GCP experience\n- Team lead experience",
+    "resultsToShow": "Results to show",
+    "minScore": "Minimum score",
+    "matchingMode": "Matching mode",
+    "fast": "Fast",
+    "ai": "AI",
+    "fastModeDescription": "Fast Mode: Uses embedding-based semantic search. Quick results based on text similarity. Great for initial screening.",
+    "aiModeDescription": "AI Mode: Uses LLM to analyze each candidate in depth. Provides skill matching, strengths, concerns, and explanations. Slower but more accurate for final selection.",
+    "findMatching": "Find Matching Candidates",
+    "searching": "Searching...",
+    "aiAnalyzing": "AI is analyzing candidates...",
+    "errorEmpty": "Please enter a vacancy description or upload a file"
+  },
+  "results": {
+    "candidatesFound": "{{count}} Candidates Found",
+    "candidatesFound_one": "{{count}} Candidate Found",
+    "fromTotal": "from {{total}} total resumes",
+    "fastMode": "Fast Mode",
+    "aiMode": "AI Mode",
+    "parsedVacancy": "Parsed Vacancy",
+    "mustHaveSkills": "Must-have skills",
+    "niceToHave": "Nice-to-have",
+    "minExperience": "Minimum experience: {{years}} years",
+    "combined": "Combined",
+    "aiAnalysis": "AI Analysis",
+    "matchingSkills": "Matching Skills",
+    "missingSkills": "Missing Skills",
+    "strengths": "Strengths",
+    "concerns": "Concerns",
+    "embedding": "Embedding",
+    "llm": "LLM",
+    "yearsExperience": "{{years}} years of experience",
+    "summary": "Summary",
+    "noMatches": "No matching candidates found",
+    "noMatchesHint": "Try lowering the minimum score or adjusting your vacancy description"
+  },
+  "resumes": {
+    "title": "Resume Database",
+    "indexed": "{{count}} resumes indexed",
+    "searchPlaceholder": "Search resumes...",
+    "search": "Search",
+    "noResumes": "No resumes found",
+    "noResumesHint": "Try adjusting your search or import some resumes",
+    "indexed_badge": "Indexed",
+    "pending_badge": "Pending",
+    "page": "Page {{current}} of {{total}}",
+    "skills": "Skills",
+    "workHistory": "Work History",
+    "education": "Education"
+  },
+  "import": {
+    "title": "Import Resumes",
+    "subtitle": "Upload individual files or import from a directory",
+    "uploadFiles": "Upload Files",
+    "dropzone": "Drop files here or click to browse",
+    "dropzoneHint": "Supports PDF, DOCX, and images (PNG, JPG)",
+    "uploaded": "{{success}} uploaded",
+    "pending": "{{count}} pending",
+    "uploadButton": "Upload {{count}} Files",
+    "batchImport": "Batch Import from Directory",
+    "directoryPath": "Directory Path",
+    "directoryHint": "Path relative to the project root. The system will scan all PDF, DOCX, and image files.",
+    "importFromDirectory": "Import from Directory",
+    "importing": "Importing...",
+    "tips": {
+      "title": "Tips for best results",
+      "pdf": "PDF files with selectable text work best",
+      "ocr": "Images will be processed with OCR (requires Tesseract)",
+      "ai": "AI extracts contact info, skills, experience, and education",
+      "duplicates": "Duplicate files (same name) are skipped unless forced"
+    }
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "close": "Close",
+    "more": "+{{count}} more"
+  }
+}

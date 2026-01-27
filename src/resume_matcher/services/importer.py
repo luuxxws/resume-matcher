@@ -17,7 +17,7 @@ from typing import Any
 from dotenv import load_dotenv
 from groq import Groq
 
-from ..db import get_connection, store_resume
+from ..db import get_connection, store_resume, content_hash_exists
 from ..models.embedding import get_or_compute_embedding
 from ..utils.convert_file_to_text import convert_file_to_text
 from ..utils.text_cleaner import clean_ocr_text
@@ -96,9 +96,14 @@ Resume text (can be in Russian and English):
         return {}
 
 
-def import_resume(file_path: Path | str, force_update: bool = False) -> dict[str, Any]:
+def import_resume(file_path: Path | str, force_update: bool = False, skip_duplicates: bool = True) -> dict[str, Any]:
     """
     Imports a single resume into the database.
+    
+    Args:
+        file_path: Path to the resume file.
+        force_update: If True, re-import even if file already exists.
+        skip_duplicates: If True, skip files with identical content (by hash).
     """
     path = Path(file_path)
     if not path.is_file():
@@ -108,6 +113,18 @@ def import_resume(file_path: Path | str, force_update: bool = False) -> dict[str
         "file_name": path.name,
         "status": "success",
     }
+
+    # Check for duplicate content before expensive operations
+    if skip_duplicates and not force_update:
+        existing = content_hash_exists(path)
+        if existing:
+            logger.info(f"Skipping duplicate content: {path.name} (same as {existing['file_name']})")
+            return {
+                "file_name": path.name,
+                "status": "skipped_duplicate",
+                "duplicate_of": existing["file_name"],
+                "existing_id": existing["id"],
+            }
 
     # Text extraction
     raw_text = convert_file_to_text(path)
